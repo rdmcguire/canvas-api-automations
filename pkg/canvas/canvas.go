@@ -31,7 +31,7 @@ func (c *Client) reqMiddlwareFunc() canvasauto.RequestEditorFn {
 		req.Header.Add("Authorization", "Bearer "+c.token)
 		req.Header.Set("Accept", "application/json")
 		req.WithContext(c.ctx)
-		slog.Info("Sending HTTP Request", slog.Any("req", req.URL))
+		slog.Debug("Sending HTTP Request", slog.Any("req", req.URL))
 		return nil
 	}
 }

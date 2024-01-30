@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/tomnomnom/linkheader"
 
@@ -12,10 +13,6 @@ import (
 )
 
 var DefPerPage = 20
-
-type CourseResponse struct {
-	Course *canvasauto.Course `json:"course"`
-}
 
 func (c *Client) ListCourses() []*canvasauto.Course {
 	courses := make([]*canvasauto.Course, 0)
@@ -55,12 +52,24 @@ func (c *Client) ListStudentsInCourse(id string) []*canvasauto.User {
 		json.NewDecoder(r.Body).Decode(&pageUsers)
 		users = append(users, pageUsers...)
 		if isLastPage(r) {
-			fmt.Println("Last Page")
 			break
 		}
 		page += 1
 	}
 	return users
+}
+
+func CourseString(course *canvasauto.Course) string {
+	str := strings.Builder{}
+	str.WriteString(fmt.Sprintf("ID:%d %s [%s]",
+		*course.Id,
+		*course.Name,
+		*course.WorkflowState,
+	))
+	if course.StartAt != nil {
+		str.WriteString(fmt.Sprintf(" @%s", *course.StartAt))
+	}
+	return str.String()
 }
 
 func isLastPage(r *http.Response) bool {
