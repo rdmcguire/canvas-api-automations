@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net/url"
 	"os"
-	"strings"
 
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvas"
 )
@@ -21,24 +20,13 @@ func main() {
 	switch cmd {
 
 	case "students":
-		if len(flag.Args()) < 2 {
-			help()
-		}
-		users := client.ListStudentsInCourse(flag.Args()[1])
-		fmt.Println("First Name,Last Name,Email Address,Student ID")
-		for _, user := range users {
-			nameParts := strings.Split(*user.SortableName, ", ")
-			if len(nameParts) < 2 {
-				continue
-			}
-			fmt.Printf("%s,%s,%s,%d\n", nameParts[1], nameParts[0], *user.Email, user.Id)
-		}
-
+		students()
 	case "classes":
-		fmt.Println("Courses:")
-		for _, course := range client.ListCourses() {
-			fmt.Println(canvas.CourseString(course))
-		}
+		classes()
+	case "modules":
+		modules()
+	case "assignments":
+		assignments()
 
 	default:
 		help()
@@ -47,8 +35,14 @@ func main() {
 }
 
 func help() {
-	fmt.Printf("Usage: %s (classes | students [classId])\n", os.Args[0])
+	fmt.Printf("Usage: %s (classes | students [classId] | modules [classId] | assignments [file])\n", os.Args[0])
 	os.Exit(1)
+}
+
+func requireArg() {
+	if len(flag.Args()) < 2 {
+		help()
+	}
 }
 
 func init() {

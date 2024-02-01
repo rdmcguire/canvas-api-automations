@@ -3,11 +3,8 @@ package canvas
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"strconv"
 	"strings"
-
-	"github.com/tomnomnom/linkheader"
 
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
 )
@@ -70,14 +67,4 @@ func CourseString(course *canvasauto.Course) string {
 		str.WriteString(fmt.Sprintf(" @%s", *course.StartAt))
 	}
 	return str.String()
-}
-
-func isLastPage(r *http.Response) bool {
-	links := linkheader.Parse(r.Header.Get("link"))
-	for _, link := range links {
-		if link.Rel == "next" {
-			return false
-		}
-	}
-	return true
 }
