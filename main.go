@@ -4,11 +4,13 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log/slog"
 	"net/url"
 	"os"
+	"strings"
 
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvas"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -46,7 +48,7 @@ func requireArg() {
 }
 
 func init() {
-	debug := flag.Bool("debug", false, "Debug Output")
+	logLevel := flag.String("logLevel", "info", "Log Level (error|warn|info|debug|trace)")
 	flag.Parse()
 
 	if len(flag.Args()) < 1 {
@@ -55,17 +57,19 @@ func init() {
 		cmd = flag.Args()[0]
 	}
 
-	lvl := new(slog.LevelVar)
-	if *debug {
-		lvl.Set(slog.LevelDebug)
-	} else {
-		lvl.Set(slog.LevelInfo)
+	switch strings.ToLower(*logLevel) {
+	case "error":
+		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+	case "warn":
+		zerolog.SetGlobalLevel(zerolog.WarnLevel)
+	case "info":
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	case "debug":
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	case "trace":
+		zerolog.SetGlobalLevel(zerolog.TraceLevel)
 	}
-
-	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-		Level: lvl,
-	}))
-	slog.SetDefault(logger)
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
 	token := os.Getenv("CANVAS_TOKEN")
 	canvasUrl, err := url.Parse(os.Getenv("CANVAS_URL"))

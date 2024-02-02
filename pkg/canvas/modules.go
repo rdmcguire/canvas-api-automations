@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"strconv"
 
-	"log/slog"
+	"github.com/rs/zerolog/log"
 
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
 )
 
+// TODO this should reeturn error instead of log
 func (c *Client) ListModules(courseID string) []*canvasauto.Module {
 	modules := make([]*canvasauto.Module, 0)
 	include := []string{"items"}
@@ -24,7 +25,9 @@ func (c *Client) ListModules(courseID string) []*canvasauto.Module {
 				Include: &include,
 			})
 		if err != nil {
-			slog.Error("Failed listing modules", "error", err)
+			log.Error().
+				Str("error", err.Error()).
+				Msg("Failed listing modules")
 			continue
 		}
 		json.NewDecoder(r.Body).Decode(&pageModules)

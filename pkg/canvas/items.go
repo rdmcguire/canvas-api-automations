@@ -45,9 +45,9 @@ func (c *Client) GetItemByName(opts *ModuleItemOpts) *canvasauto.ModuleItem {
 
 	// Then get fuzzy if we want to
 	if opts.Fuzzy {
-		strings := GetItemsStrings(opts.Module.Items)
-		matches := fuzzy.FindFold(opts.Name, strings)
-		if len(matches) > 1 {
+		itemStrings := GetItemsStrings(opts.Module.Items)
+		matches := fuzzy.FindFold(opts.Name, itemStrings)
+		if len(matches) > 0 {
 			return GetItemByTitle(opts.Module.Items, matches[0])
 		}
 	}

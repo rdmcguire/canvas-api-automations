@@ -10,6 +10,7 @@ require (
 	github.com/lithammer/fuzzysearch v1.1.8
 	github.com/pkg/errors v0.9.1
 	github.com/pterm/pterm v0.12.76
+	github.com/rs/zerolog v1.31.0
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
 )
 
@@ -21,8 +22,8 @@ require (
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/labstack/gommon v0.3.0 // indirect
-	github.com/mattn/go-colorable v0.1.6 // indirect
-	github.com/mattn/go-isatty v0.0.12 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect

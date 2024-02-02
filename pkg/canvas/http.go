@@ -7,10 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/rs/zerolog/log"
 
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
 	"github.com/henvic/httpretty"
@@ -59,7 +60,7 @@ func (c ClientRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	}
 
 	// Debug request
-	if slog.Default().Enabled(c.Ctx, slog.LevelDebug) {
+	if log.Trace().Enabled() {
 		fmt.Println("\n" + pterm.Info.Sprintf("> %s %s REQUEST",
 			strings.ToUpper(r.URL.Scheme),
 			r.Method))
@@ -71,7 +72,7 @@ func (c ClientRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	resp, err := http.DefaultTransport.RoundTrip(r)
 
 	// Debug response
-	if slog.Default().Enabled(c.Ctx, slog.LevelDebug) {
+	if log.Trace().Enabled() {
 		fmt.Println("\n" + pterm.Info.Sprint("< HTTP RESPONSE"))
 		pretty.PrintResponse(resp)
 		fmt.Println(pterm.Info.Sprint("< END HTTP RESPONSE") + "\n")
