@@ -27,6 +27,10 @@ of straight up HTML, such as for swapping links for module items.
     * Run the command like `canvas-api-automations assignments course.html 99999` where 99999 is the
       id of the canvas course you found running the classes subcommand
 
+## TODO
+
+* Grading. All of it.
+
 ## Weird Stuff
 
 It's great that Canvas produced an API. Thanks Canvas. Pay attention Cisco.
