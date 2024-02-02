@@ -20,3 +20,9 @@ of straight up HTML, such as for swapping links for module items.
 	* Dumps students in a class, in the csv format Netacad expects
 * Modules
 	* Dumps module info
+* Assignments
+    * This updates all links for netacad assignments in a course
+    * You must download the html of the assignments page, and reference as command arg
+        * The html comes from the "Course Home", with all the links
+    * Run the command like `canvas-api-automations assignments course.html 99999` where 99999 is the
+      id of the canvas course you found running the classes subcommand
