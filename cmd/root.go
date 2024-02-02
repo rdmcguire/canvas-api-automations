@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 
@@ -20,7 +19,6 @@ var rootCmd = &cobra.Command{
 	Short: "Canvas API Interactions",
 	Long: `Utilities for interacting with the canvas API
 and brutal sorta-automations for Netacad courses`,
-	// Stores *canvas.Client in our global context
 	PersistentPreRun: rootCmdPreRun,
 }
 
@@ -39,11 +37,8 @@ func Execute() {
 
 func rootCmdPreRun(cmd *cobra.Command, args []string) {
 	// Prepare logging
-	cmd.DebugFlags()
-	level, _ := cmd.PersistentFlags().GetString("logLevel")
+	level, _ := cmd.Flags().GetString("logLevel")
 	logLevel := util.ParseLogLevel(level, defLogLevel)
-	fmt.Println(level)
-	fmt.Println(logLevel)
 
 	logger := log.
 		Output(zerolog.ConsoleWriter{Out: os.Stderr}).
@@ -54,8 +49,6 @@ func rootCmdPreRun(cmd *cobra.Command, args []string) {
 	// Set globals
 	log.Logger = logger
 	zerolog.SetGlobalLevel(logLevel)
-
-	logger.Trace().Msg("Trace Logging")
 
 	util.SetClient(cmd, args)
 }
