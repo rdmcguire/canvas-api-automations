@@ -11,7 +11,9 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pterm/pterm v0.12.76
 	github.com/rs/zerolog v1.31.0
+	github.com/spf13/cobra v1.8.0
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
+	k8s.io/utils v0.0.0-20240102154912-e7106e64919e
 )
 
 require (
@@ -27,7 +29,6 @@ require (
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
-	github.com/spf13/cobra v1.8.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.1.0 // indirect

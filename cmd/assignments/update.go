@@ -1,16 +1,24 @@
-package main
+package assignments
 
 import (
-	"flag"
 	"regexp"
 	"strings"
 
-	"github.com/rs/zerolog/log"
-
+	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvas"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/netacad"
+	"github.com/rs/zerolog"
+	"github.com/spf13/cobra"
 )
+
+var assignmentsUpdateCmd = &cobra.Command{
+	Use:               "update <netacad_assignments.html> <courseID>",
+	Aliases:           []string{"fix", "u", "set"},
+	Args:              cobra.ExactArgs(2),
+	ValidArgsFunction: ValidateAssignmentUpdateArgs,
+	Run:               execAssignmentsUpdateCmd,
+}
 
 // Set this to false if an assignnment containing
 // the string "Final Exam" should be used. This is due to
@@ -22,14 +30,29 @@ var (
 	linkRegexp *regexp.Regexp = regexp.MustCompile(`<a[^>]+href="([^"]+)".*>([^<]+)`)
 	examRegexp *regexp.Regexp = regexp.MustCompile(`Chapter (\d+) Exam`)
 	znumRegexp *regexp.Regexp = regexp.MustCompile(` 0(\d+)`)
+
+	log                *zerolog.Logger
+	client             *canvas.Client
+	courseID           string
+	dryRun             bool
+	netacadAssignments []netacad.Assignment
 )
 
-var netacadAssignments []netacad.Assignment
+// Prepares logging and canvas client, loads from netacad html dump,
+// and then begins iterating
+func execAssignmentsUpdateCmd(cmd *cobra.Command, args []string) {
+	log = util.Logger(cmd)
+	client = util.Client(cmd)
+	dryRun, _ = cmd.LocalFlags().GetBool("dryRun")
 
-func assignments() {
-	requireArg()
-	netacadAssignments = netacad.LoadAssignmentsHtmlFromFile(flag.Args()[1])
+	courseID = args[1]
+	netacadAssignments = netacad.LoadAssignmentsHtmlFromFile(args[0])
+
 	findLinkMatches()
+}
+
+func init() {
+	assignmentsUpdateCmd.Flags().Bool("dryRun", false, "Specify to only report changes")
 }
 
 // Iterates through all modules, and then in each
@@ -39,7 +62,6 @@ func assignments() {
 // If a match is found, updateModuleItemLink() will attempt
 // to fix any bad links
 func findLinkMatches() {
-	courseID := flag.Args()[2]
 	modules := client.ListModules(courseID)
 
 	for _, assignment := range netacadAssignments {
@@ -195,41 +217,46 @@ func UpdateAssignmentItemLink(opts *canvas.ModuleItemOpts) {
 		Msg("Updating assignment")
 
 	// Update the assignment with the new description
-	aOpts.Assignment = assignment
-	if a, e := client.UpdateAssignment(aOpts); e != nil {
-		log.Error().
-			Str("error", err.Error()).
-			Msg("Failed to update assignment")
-	} else {
-		log.Info().
-			Str("assignment", canvas.AssignmentString(a)).
-			Msg("Links updated for assignment")
+	if !dryRun {
+		aOpts.Assignment = assignment
+		if a, e := client.UpdateAssignment(aOpts); e != nil {
+			log.Error().
+				Str("error", err.Error()).
+				Msg("Failed to update assignment")
+		} else {
+			log.Info().
+				Str("assignment", canvas.AssignmentString(a)).
+				Msg("Links updated for assignment")
+		}
 	}
 }
 
 // Used for items that are an external url link
 func UpdateExternalItemLink(opts *canvas.ModuleItemOpts) {
-	if canvas.StrStrOrNil(opts.Item.ExternalUrl) != opts.URL {
-		log.Warn().
-			Str("module", canvas.StrStrOrNil(opts.Module.Name)).
-			Str("item", canvas.StrStrOrNil(opts.Item.Title)).
-			Str("assignment", opts.Name).
-			Str("newLink", opts.URL).
-			Msg("Reconciling link for module item")
-		newItem, err := client.UpdateModuleItemLink(&canvas.ModuleItemOpts{
-			CourseID: opts.CourseID,
-			Module:   opts.Module,
-			Item:     opts.Item,
-			Name:     canvas.StrStrOrNil(opts.Item.Title),
-			URL:      opts.URL,
-		})
-		if err != nil {
-			panic(err)
+	if !dryRun {
+		if canvas.StrStrOrNil(opts.Item.ExternalUrl) != opts.URL {
+			log.Warn().
+				Str("module", canvas.StrStrOrNil(opts.Module.Name)).
+				Str("item", canvas.StrStrOrNil(opts.Item.Title)).
+				Str("assignment", opts.Name).
+				Str("newLink", opts.URL).
+				Msg("Reconciling link for module item")
+			newItem, err := client.UpdateModuleItemLink(&canvas.ModuleItemOpts{
+				CourseID: opts.CourseID,
+				Module:   opts.Module,
+				Item:     opts.Item,
+				Name:     canvas.StrStrOrNil(opts.Item.Title),
+				URL:      opts.URL,
+			})
+			if err != nil {
+				panic(err)
+			}
+			log.Debug().
+				Str("item", canvas.ModuleItemString(newItem)).
+				Msg("Item Updated Successfully")
 		}
-		log.Debug().
-			Str("item", canvas.ModuleItemString(newItem)).
-			Msg("Item Updated Successfully")
 	}
+
 	log.Debug().
 		Str("Module", canvas.StrStrOrNil(opts.Module.Name)).
 		Str("Item", canvas.StrStrOrNil(opts.Item.Title)).

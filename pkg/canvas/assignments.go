@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
+	"k8s.io/utils/pointer"
 )
 
 type AssignmentOpts struct {
@@ -36,6 +38,30 @@ func (c *Client) GetAssignmentById(opts *AssignmentOpts) (*canvasauto.Assignment
 	}
 
 	return decodeAssignmentResponse(r)
+}
+
+func (c *Client) ListAssignments(courseID string) ([]*canvasauto.Assignment, error) {
+	assignments := make([]*canvasauto.Assignment, 0)
+	opts := &canvasauto.ListAssignmentsParams{Page: pointer.String("1")}
+	page := 1
+	for {
+		pageAssignments := make([]*canvasauto.Assignment, 0)
+		r, err := c.api.ListAssignments(c.ctx, courseID, opts)
+		if err != nil {
+			return nil, err
+		}
+
+		json.NewDecoder(r.Body).Decode(&pageAssignments)
+		assignments = append(assignments, pageAssignments...)
+
+		if isLastPage(r) {
+			break
+		}
+
+		page += 1
+		opts.Page = pointer.String(strconv.Itoa(page))
+	}
+	return assignments, nil
 }
 
 func decodeAssignmentResponse(r *http.Response) (*canvasauto.Assignment, error) {

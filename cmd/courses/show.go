@@ -16,17 +16,10 @@ var coursesShowCmd = &cobra.Command{
 }
 
 func execCoursesShowCmd(cmd *cobra.Command, args []string) {
-	log := util.Logger(cmd)
 	client := util.Client(cmd)
-
-	log.Trace().Msg("Random trace msg")
 
 	fmt.Println("Courses:")
 	for _, course := range client.ListCourses() {
 		fmt.Println(canvas.CourseString(course))
 	}
-}
-
-func init() {
-	CoursesCmd.AddCommand(coursesShowCmd)
 }

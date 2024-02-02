@@ -5,7 +5,10 @@ import (
 	"os"
 	"os/signal"
 
+	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/assignments"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/courses"
+	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/modules"
+	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/students"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -54,17 +57,16 @@ func rootCmdPreRun(cmd *cobra.Command, args []string) {
 }
 
 func init() {
+	// Add root-level flags
 	rootCmd.PersistentFlags().StringP("logLevel", "l", "info",
 		"Sets log level (fatal|error|warn|info|debug|trace)")
 
+	// Register autocompletion funcs
 	rootCmd.RegisterFlagCompletionFunc("logLevel", validLogLevels)
 
-	// Add sub-commands
+	// Add first-level sub-commands
 	rootCmd.AddCommand(courses.CoursesCmd)
-}
-
-func validLogLevels(cmd *cobra.Command, args []string, toComplete string,
-) ([]string, cobra.ShellCompDirective) {
-	return []string{"fatal", "error", "warn", "info", "debug", "trace"},
-		cobra.ShellCompDirectiveNoFileComp
+	rootCmd.AddCommand(assignments.AssignmentsCmd)
+	rootCmd.AddCommand(students.StudentsCmd)
+	rootCmd.AddCommand(modules.ModulesCmd)
 }
