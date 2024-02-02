@@ -38,7 +38,7 @@ There are, however, some crappy things about the Canvas API:
     * See note about custom RoundTripper below
 * Data types are downright wrong in some places
     * Manually correcting auto-generated code sucks, but I had no choice
-    * Some fields (such as `PointsPossible` are generated as an int, but can be floats.
+    * Some fields (such as `PointsPossible`) are generated as an int, but can be floats.
     * You may find more. You'll have to fix them. I fixed what I needed.
 * Canvas wrote a GraphAPI, but didn't bother producing an SDL or providing an introspection endpoint
     * Because of this, you can't auto-generate code for their GraphAPI.. So I used the REST API
