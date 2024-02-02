@@ -23,7 +23,7 @@ type ClientOpts struct {
 }
 
 func (c *Client) String() string {
-	return fmt.Sprintf("URL: %s\n", c.api.Server)
+	return fmt.Sprintf("URL: %s", c.api.Server)
 }
 
 func MustNewClient(opts *ClientOpts) *Client {
