@@ -32,19 +32,21 @@ of straight up HTML, such as for swapping links for module items.
 It's great that Canvas produced an API. Thanks Canvas. Pay attention Cisco.
 
 There are, however, some crappy things about the Canvas API:
-    * Postman schema is written for form data instead of json payload
-        * This breaks most auto-generated OpenAPI code
-        * See note about custom RoundTripper below
-    * Data types are downright wrong in some places
-        * Manually correcting auto-generated code sucks, but I had no choice
-        * Some fields (such as `PointsPossible` are generated as an int, but can be floats.
-        * You may find more. You'll have to fix them. I fixed what I needed.
-    * Canvas wrote a GraphAPI, but didn't bother producing an SDL or providing an introspection endpoint
-        * Because of this, you can't auto-generate code for their GraphAPI.. So I used the REST API
+
+* Postman schema is written for form data instead of json payload
+    * This breaks most auto-generated OpenAPI code
+    * See note about custom RoundTripper below
+* Data types are downright wrong in some places
+    * Manually correcting auto-generated code sucks, but I had no choice
+    * Some fields (such as `PointsPossible` are generated as an int, but can be floats.
+    * You may find more. You'll have to fix them. I fixed what I needed.
+* Canvas wrote a GraphAPI, but didn't bother producing an SDL or providing an introspection endpoint
+    * Because of this, you can't auto-generate code for their GraphAPI.. So I used the REST API
 
 Because of this, I had to do two icky things:
-    1. Modify auto-generated code to correct field types (int -> float32)
-    1. Override the default http Transport with a custom RoundTripper
+
+1. Modify auto-generated code to correct field types (int -> float32)
+1. Override the default http Transport with a custom RoundTripper
 
 ### About this RoundTripper
 
