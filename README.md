@@ -1,4 +1,4 @@
-# Canvaws API Automations
+# Canvas API Automations
 
 This contains various utilities for updating a Canvas course.
 
