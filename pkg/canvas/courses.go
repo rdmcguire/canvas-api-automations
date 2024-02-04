@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
+	"github.com/rs/zerolog/log"
 )
 
 var DefPerPage = 20
@@ -39,13 +40,17 @@ func (c *Client) ListStudentsInCourse(id string) []*canvasauto.User {
 	page := 1
 	for {
 		pageUsers := make([]*canvasauto.User, 0)
-		r, _ := c.api.ListUsersInCourseUsers(c.ctx, id,
+		r, err := c.api.ListUsersInCourseUsers(c.ctx, id,
 			&canvasauto.ListUsersInCourseUsersParams{
 				Page:           &page,
 				PerPage:        &DefPerPage,
 				EnrollmentRole: &role,
 			},
 		)
+		if err != nil || r.Body == nil {
+			log.Error().Err(err)
+		}
+
 		json.NewDecoder(r.Body).Decode(&pageUsers)
 		users = append(users, pageUsers...)
 		if isLastPage(r) {

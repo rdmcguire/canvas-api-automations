@@ -18,11 +18,12 @@ import (
 const defLogLevel = zerolog.InfoLevel
 
 var rootCmd = &cobra.Command{
-	Use:   "canvas-api-automations",
-	Short: "Canvas API Interactions",
+	Use:              "canvas-api-automations",
+	PersistentPreRun: rootCmdPreRun,
+	TraverseChildren: true,
+	Short:            "Canvas API Interactions",
 	Long: `Utilities for interacting with the canvas API
 and brutal sorta-automations for Netacad courses`,
-	PersistentPreRun: rootCmdPreRun,
 }
 
 func Execute() {
@@ -57,12 +58,18 @@ func rootCmdPreRun(cmd *cobra.Command, args []string) {
 }
 
 func init() {
+	// Global settings
+	cobra.EnableTraverseRunHooks = true // Allow all pre-run hooks to execute
+
 	// Add root-level flags
 	rootCmd.PersistentFlags().StringP("logLevel", "l", "info",
 		"Sets log level (fatal|error|warn|info|debug|trace)")
+	rootCmd.PersistentFlags().Int("courseID", 0,
+		"Specify course ID, necessary for most sub-commands")
 
 	// Register autocompletion funcs
 	rootCmd.RegisterFlagCompletionFunc("logLevel", validLogLevels)
+	rootCmd.RegisterFlagCompletionFunc("courseID", courses.ValidateCourseIdArg)
 
 	// Add first-level sub-commands
 	rootCmd.AddCommand(courses.CoursesCmd)

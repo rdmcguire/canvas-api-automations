@@ -2,8 +2,8 @@ package modules
 
 import (
 	"fmt"
+	"strconv"
 
-	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/courses"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvas"
 	"github.com/spf13/cobra"
@@ -12,8 +12,8 @@ import (
 var modulesShowCmd = &cobra.Command{
 	Use:               "show",
 	Aliases:           []string{"ls", "s"},
-	Args:              cobra.ExactArgs(1),
-	ValidArgsFunction: courses.ValidateCourseIdArg,
+	Args:              cobra.NoArgs,
+	ValidArgsFunction: cobra.NoFileCompletions,
 	Run:               execModulesShowCmd,
 	Short:             "Show modules",
 }
@@ -21,10 +21,10 @@ var modulesShowCmd = &cobra.Command{
 func execModulesShowCmd(cmd *cobra.Command, args []string) {
 	log := util.Logger(cmd)
 	client := util.Client(cmd)
-	courseID := args[0]
+	courseID, _ := cmd.Flags().GetInt("courseID")
 
 	fmt.Println("modules:")
-	for _, m := range client.ListModules(courseID) {
+	for _, m := range client.ListModules(strconv.Itoa(courseID)) {
 		log.Info().Msg(canvas.ModuleString(m))
 	}
 }

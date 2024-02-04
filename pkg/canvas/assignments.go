@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 type AssignmentOpts struct {
@@ -40,9 +40,9 @@ func (c *Client) GetAssignmentById(opts *AssignmentOpts) (*canvasauto.Assignment
 	return decodeAssignmentResponse(r)
 }
 
-func (c *Client) ListAssignments(courseID string) ([]*canvasauto.Assignment, error) {
+func (c *Client) ListAssignments(courseID string, modules ...int) ([]*canvasauto.Assignment, error) {
 	assignments := make([]*canvasauto.Assignment, 0)
-	opts := &canvasauto.ListAssignmentsParams{Page: pointer.String("1")}
+	opts := &canvasauto.ListAssignmentsParams{Page: ptr.To("1")}
 	page := 1
 	for {
 		pageAssignments := make([]*canvasauto.Assignment, 0)
@@ -59,7 +59,7 @@ func (c *Client) ListAssignments(courseID string) ([]*canvasauto.Assignment, err
 		}
 
 		page += 1
-		opts.Page = pointer.String(strconv.Itoa(page))
+		opts.Page = ptr.To(strconv.Itoa(page))
 	}
 	return assignments, nil
 }

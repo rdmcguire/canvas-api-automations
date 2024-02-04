@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/rs/zerolog/log"
+	"k8s.io/utils/ptr"
 
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
 )
@@ -38,6 +39,19 @@ func (c *Client) ListModules(courseID string) []*canvasauto.Module {
 		page += 1
 	}
 	return modules
+}
+
+func (c *Client) GetModuleByID(courseID string, moduleID string) (*canvasauto.Module, error) {
+	var module *canvasauto.Module
+	r, err := c.api.ShowModule(c.ctx, courseID, moduleID, &canvasauto.ShowModuleParams{
+		Include: ptr.To([]string{"items"}),
+	})
+	if err != nil {
+		return module, err
+	}
+
+	json.NewDecoder(r.Body).Decode(module)
+	return module, err
 }
 
 func ModuleString(module *canvasauto.Module) string {
