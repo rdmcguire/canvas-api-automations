@@ -2,6 +2,7 @@ package assignments
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
@@ -13,11 +14,10 @@ import (
 )
 
 var assignmentsUpdateCmd = &cobra.Command{
-	Use:               "update <netacad_assignments.html> <courseID>",
-	Aliases:           []string{"fix", "u", "set"},
-	Args:              cobra.ExactArgs(2),
-	ValidArgsFunction: ValidateAssignmentUpdateArgs,
-	Run:               execAssignmentsUpdateCmd,
+	Use:     "update <netacad_assignments.html> <courseID>",
+	Aliases: []string{"fix", "u", "set"},
+	Args:    cobra.ExactArgs(1),
+	Run:     execAssignmentsUpdateCmd,
 }
 
 // Set this to false if an assignnment containing
@@ -45,7 +45,9 @@ func execAssignmentsUpdateCmd(cmd *cobra.Command, args []string) {
 	client = util.Client(cmd)
 	dryRun, _ = cmd.LocalFlags().GetBool("dryRun")
 
-	courseID = args[1]
+	id, _ := cmd.Flags().GetInt("courseID")
+	courseID = strconv.Itoa(id)
+
 	netacadAssignments = netacad.LoadAssignmentsHtmlFromFile(args[0])
 
 	findLinkMatches()
