@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"strings"
 
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/assignments"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/courses"
@@ -40,6 +41,11 @@ func Execute() {
 }
 
 func rootCmdPreRun(cmd *cobra.Command, args []string) {
+	commands := strings.Split(cmd.CommandPath(), " ")
+	if len(commands) > 1 && commands[1] == "completion" {
+		return
+	}
+
 	// Prepare logging
 	level, _ := cmd.Flags().GetString("logLevel")
 	logLevel := util.ParseLogLevel(level, defLogLevel)
