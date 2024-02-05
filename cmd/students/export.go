@@ -2,7 +2,6 @@ package students
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
@@ -25,10 +24,7 @@ func execStudentsExportCmd(cmd *cobra.Command, args []string) {
 	client := util.Client(cmd)
 	log := util.Logger(cmd)
 
-	id, _ := cmd.Flags().GetInt("courseID")
-	courseId := strconv.Itoa(id)
-
-	users := client.ListStudentsInCourse(courseId)
+	users := client.ListStudentsInCourse(util.GetCourseIdStr(cmd))
 	log.Debug().Int("numStudents", len(users)).
 		Msg("Successfully retrieved students from course")
 

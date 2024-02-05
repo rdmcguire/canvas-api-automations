@@ -12,7 +12,7 @@ func ValidateModuleIdArg(cmd *cobra.Command, args []string, toComplete string,
 ) ([]string, cobra.ShellCompDirective) {
 	// First retrieve all modules
 	client := util.Client(cmd)
-	modules := client.ListModules(args[0])
+	modules := client.ListModules(util.GetCourseIdStr(cmd))
 
 	// Then filter and return
 	validModules := make([]string, 0, len(modules))

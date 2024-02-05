@@ -28,3 +28,13 @@ func EnsureCourseId(cmd *cobra.Command, args []string) {
 			Msg("CourseID is required, provide with --courseID or COURSE_ID env")
 	}
 }
+
+func GetCourseIdStr(cmd *cobra.Command) string {
+	id, _ := cmd.Flags().GetInt("courseID")
+	return strconv.Itoa(id)
+}
+
+func GetCourseIdInt(cmd *cobra.Command) int {
+	id, _ := cmd.Flags().GetInt("courseID")
+	return id
+}

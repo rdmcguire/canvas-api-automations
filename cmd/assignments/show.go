@@ -22,9 +22,7 @@ func execAssignmentsShowCmd(cmd *cobra.Command, args []string) {
 	log := util.Logger(cmd)
 	client := util.Client(cmd)
 
-	id, _ := cmd.Flags().GetInt("courseID")
-	courseID := strconv.Itoa(id)
-
+	courseID := util.GetCourseIdStr(cmd)
 	moduleID, _ := cmd.Flags().GetInt("module")
 	assignments := make([]*canvasauto.Assignment, 0)
 	var err error
@@ -34,7 +32,7 @@ func execAssignmentsShowCmd(cmd *cobra.Command, args []string) {
 		module, err := client.GetModuleByID(courseID, strconv.Itoa(moduleID))
 		if err != nil || module == nil {
 			log.Fatal().Err(err).
-				Int("courseID", id).
+				Int("courseID", util.GetCourseIdInt(cmd)).
 				Int("moduleID", moduleID).Msg("Failed to find module")
 		} else if module.Items == nil {
 			log.Fatal().Msg("Module has no items")

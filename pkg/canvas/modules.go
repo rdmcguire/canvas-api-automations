@@ -42,7 +42,7 @@ func (c *Client) ListModules(courseID string) []*canvasauto.Module {
 }
 
 func (c *Client) GetModuleByID(courseID string, moduleID string) (*canvasauto.Module, error) {
-	var module *canvasauto.Module
+	module := &canvasauto.Module{}
 	r, err := c.api.ShowModule(c.ctx, courseID, moduleID, &canvasauto.ShowModuleParams{
 		Include: ptr.To([]string{"items"}),
 	})

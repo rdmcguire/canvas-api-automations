@@ -2,7 +2,6 @@ package assignments
 
 import (
 	"regexp"
-	"strconv"
 	"strings"
 
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
@@ -45,8 +44,7 @@ func execAssignmentsUpdateCmd(cmd *cobra.Command, args []string) {
 	client = util.Client(cmd)
 	dryRun, _ = cmd.LocalFlags().GetBool("dryRun")
 
-	id, _ := cmd.Flags().GetInt("courseID")
-	courseID = strconv.Itoa(id)
+	courseID = util.GetCourseIdStr(cmd)
 
 	netacadAssignments = netacad.LoadAssignmentsHtmlFromFile(args[0])
 
