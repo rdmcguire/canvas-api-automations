@@ -1,6 +1,9 @@
 package canvas
 
-import "strconv"
+import (
+	"strconv"
+	"time"
+)
 
 func StrStrOrNil(strPtr *string) string {
 	if strPtr == nil {
@@ -28,4 +31,12 @@ func BoolStrOrNil(boolPtr *bool) string {
 	} else {
 		return "false"
 	}
+}
+
+func TimeStrOrNil(timePtr *time.Time) string {
+	if timePtr == nil {
+		return "nil"
+	}
+
+	return timePtr.String()
 }

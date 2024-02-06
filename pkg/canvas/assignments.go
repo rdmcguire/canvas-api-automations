@@ -71,9 +71,10 @@ func decodeAssignmentResponse(r *http.Response) (*canvasauto.Assignment, error) 
 }
 
 func AssignmentString(assignment *canvasauto.Assignment) string {
-	return fmt.Sprintf("Assignment %s [ID:%s] [Published:%s]",
+	return fmt.Sprintf("Assignment %s [ID:%s] [Published:%s] [Due:%s]",
 		StrStrOrNil(assignment.Name),
 		IntStrOrNil(assignment.Id),
 		BoolStrOrNil(assignment.Published),
+		TimeStrOrNil(assignment.DueAt),
 	)
 }

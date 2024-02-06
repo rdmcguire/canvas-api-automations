@@ -3,6 +3,7 @@ package assignments
 import (
 	"strconv"
 
+	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/modules"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvas"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
@@ -23,7 +24,7 @@ func execAssignmentsShowCmd(cmd *cobra.Command, args []string) {
 	client := util.Client(cmd)
 
 	courseID := util.GetCourseIdStr(cmd)
-	moduleID, _ := cmd.Flags().GetInt("module")
+	moduleID, _ := cmd.Flags().GetInt("moduleID")
 	assignments := make([]*canvasauto.Assignment, 0)
 	var err error
 
@@ -48,6 +49,10 @@ func execAssignmentsShowCmd(cmd *cobra.Command, args []string) {
 					continue
 				}
 				assignments = append(assignments, a)
+			} else {
+				log.Debug().Str("type", canvas.StrStrOrNil(i.Type)).
+					Str("item", canvas.StrStrOrNil(i.Title)).
+					Msg("Skipping non-assignment item")
 			}
 		}
 	} else {
@@ -57,11 +62,19 @@ func execAssignmentsShowCmd(cmd *cobra.Command, args []string) {
 		}
 	}
 
+	assignmentID, _ := cmd.Flags().GetInt("assignmentID")
 	for _, a := range assignments {
+		if assignmentID != 0 && *a.Id != assignmentID {
+			continue
+		}
 		log.Info().Msg(canvas.AssignmentString(a))
 	}
 }
 
 func init() {
-	assignmentsShowCmd.Flags().Int("module", 0, "Specify module by ID")
+	assignmentsShowCmd.Flags().Int("moduleID", 0, "Specify module by ID")
+	assignmentsShowCmd.PersistentFlags().Int("assignmentID", 0, "Specify assignment by ID")
+
+	assignmentsShowCmd.RegisterFlagCompletionFunc("moduleID", modules.ValidateModuleIdArg)
+	assignmentsShowCmd.RegisterFlagCompletionFunc("assignmentID", ValidAssignmentIdArg)
 }
