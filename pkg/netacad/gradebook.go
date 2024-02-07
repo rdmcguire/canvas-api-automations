@@ -2,7 +2,6 @@ package netacad
 
 import (
 	"encoding/csv"
-	"fmt"
 	"io"
 	"os"
 	"regexp"
@@ -92,8 +91,6 @@ func (g *Gradebook) LoadRow(row map[string]string) {
 		if item == "" || itemType == "" {
 			continue
 		}
-
-		fmt.Printf("Recording item %s type %s grade %s\n", item, itemType, grade)
 		(*g)[student].Record(item, itemType, grade)
 	}
 }
