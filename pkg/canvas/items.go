@@ -37,6 +37,17 @@ func (c *Client) UpdateModuleItemLink(opts *ModuleItemOpts) (*canvasauto.ModuleI
 	return newItem, err
 }
 
+// This version of GetItemByName scans all modules looking for a match
+func (c *Client) FindItem(opts *ModuleItemOpts) *canvasauto.ModuleItem {
+	for _, module := range c.ListModules(opts.CourseID) {
+		opts.Module = module
+		if item := c.GetItemByName(opts); item != nil {
+			return item
+		}
+	}
+	return nil
+}
+
 func (c *Client) GetItemByName(opts *ModuleItemOpts) *canvasauto.ModuleItem {
 	// First try by exact match
 	if item := GetItemByTitle(opts.Module.Items, opts.Name); item != nil {

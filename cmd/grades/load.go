@@ -8,19 +8,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var gradesLoadCmd = &cobra.Command{
-	Use:     "load",
+var gradesDumpCmd = &cobra.Command{
+	Use:     "dump <grade_export.csv>",
 	Args:    cobra.ExactArgs(1),
-	Aliases: []string{"import"},
-	Short:   "Load and dump grades",
+	Aliases: []string{"load", "show"},
+	Short:   "Load grades from csv and display them",
 	Long:    `Mosly useful for debugging export from Netacad`,
-	Run:     execGradesLoadCmd,
+	Run:     execGradesDumpCmd,
 }
 
-func execGradesLoadCmd(cmd *cobra.Command, args []string) {
+func execGradesDumpCmd(cmd *cobra.Command, args []string) {
 	log := util.Logger(cmd)
 
-	grades, err := netacad.LoadGradesFromFile(args[0])
+	grades, err := netacad.LoadGradesFromFile(&netacad.LoadGradesFromFileOpts{File: args[0]})
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load grades export")
 	}
@@ -35,7 +35,4 @@ func execGradesLoadCmd(cmd *cobra.Command, args []string) {
 			}
 		}
 	}
-}
-
-func init() {
 }

@@ -13,6 +13,7 @@ require (
 	github.com/rs/zerolog v1.31.0
 	github.com/spf13/cobra v1.8.0
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
+	golang.org/x/exp v0.0.0-20220909182711-5c715a9e8561
 	k8s.io/utils v0.0.0-20240102154912-e7106e64919e
 )
 

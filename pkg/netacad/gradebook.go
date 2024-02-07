@@ -6,6 +6,8 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+
+	"golang.org/x/exp/slices"
 )
 
 type Gradebook map[Student]*Grades
@@ -28,11 +30,17 @@ var (
 	isGradeRegexp   = regexp.MustCompile(`^[0-9]+(\.[0-9]+)? ?%?`)
 )
 
+type LoadGradesFromFileOpts struct {
+	File           string   // Path to Netacad csv export
+	Emails         []string // Optional email filter
+	WithGradesOnly bool     // Only return students with gradeable items
+}
+
 // In Netacad, go to Grades -> Export, select
 // Real, Percentage, and Comman delimeter
-func LoadGradesFromFile(csvExportFile string) (*Gradebook, error) {
+func LoadGradesFromFile(opts *LoadGradesFromFileOpts) (*Gradebook, error) {
 	gradebook := NewGradebook()
-	f, err := os.Open(csvExportFile)
+	f, err := os.Open(opts.File)
 	if err != nil {
 		panic(err)
 	}
@@ -49,8 +57,16 @@ func LoadGradesFromFile(csvExportFile string) (*Gradebook, error) {
 		}
 
 		rowData := rowToMap(headers, row)
+
+		// Filter unwanted emails
+		if len(opts.Emails) > 0 {
+			if !slices.Contains(opts.Emails, rowData["Email address"]) {
+				goto Next
+			}
+		}
 		gradebook.LoadRow(rowData)
 
+	Next:
 		if err == io.EOF {
 			break
 		} else if err != nil {
@@ -121,6 +137,10 @@ func (g *Grades) Record(item string, itemType string, grade string) {
 			(*g)[item].Percentage = grade
 		}
 	}
+}
+
+func (g *Grades) Count() int {
+	return len(*g)
 }
 
 // Returns gradeable column from header string.
