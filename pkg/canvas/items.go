@@ -21,8 +21,8 @@ type ModuleItemOpts struct {
 func (c *Client) UpdateModuleItemLink(opts *ModuleItemOpts) (*canvasauto.ModuleItem, error) {
 	r, err := c.api.UpdateModuleItem(c.ctx,
 		opts.CourseID,
-		IntStrOrNil(opts.Item.ModuleId),
-		IntStrOrNil(opts.Item.Id),
+		StrOrNil(opts.Item.ModuleId),
+		StrOrNil(opts.Item.Id),
 		canvasauto.UpdateModuleItemJSONRequestBody{
 			ModuleItemTitle:       &opts.Name,
 			ModuleItemExternalUrl: &opts.URL,
@@ -56,16 +56,16 @@ func (c *Client) GetItemByName(opts *ModuleItemOpts) *canvasauto.ModuleItem {
 
 func ModuleItemString(item *canvasauto.ModuleItem) string {
 	return fmt.Sprintf("Title: %s, ExternalUrl: %s, ModuleID: %s Published: %s",
-		StrStrOrNil(item.Title),
-		StrStrOrNil(item.ExternalUrl),
-		IntStrOrNil(item.ModuleId),
-		BoolStrOrNil(item.Published),
+		StrOrNil(item.Title),
+		StrOrNil(item.ExternalUrl),
+		StrOrNil(item.ModuleId),
+		StrOrNil(item.Published),
 	)
 }
 
 func GetItemByTitle(items *[]canvasauto.ModuleItem, title string) *canvasauto.ModuleItem {
 	for _, item := range *items {
-		if StrStrOrNil(item.Title) == title {
+		if StrOrNil(item.Title) == title {
 			return &item
 		}
 	}
@@ -75,7 +75,7 @@ func GetItemByTitle(items *[]canvasauto.ModuleItem, title string) *canvasauto.Mo
 func GetItemsStrings(items *[]canvasauto.ModuleItem) []string {
 	strings := make([]string, len(*items))
 	for i, item := range *items {
-		strings[i] = StrStrOrNil(item.Title)
+		strings[i] = StrOrNil(item.Title)
 	}
 	return strings
 }

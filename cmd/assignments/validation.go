@@ -29,7 +29,7 @@ func ValidAssignmentIdArg(cmd *cobra.Command, args []string, toComplete string,
 	}
 
 	for _, a := range assignments {
-		id := canvas.IntStrOrNil(a.Id)
+		id := canvas.StrOrNil(a.Id)
 		if toComplete == "" || strings.HasPrefix(id, toComplete) {
 			completions = append(completions, id)
 		}

@@ -14,4 +14,5 @@ var StudentsCmd = &cobra.Command{
 
 func init() {
 	StudentsCmd.AddCommand(studentsExportCmd)
+	StudentsCmd.AddCommand(studentsListCmd)
 }

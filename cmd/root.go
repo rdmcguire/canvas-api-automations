@@ -8,6 +8,7 @@ import (
 
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/assignments"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/courses"
+	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/grades"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/modules"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/students"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
@@ -82,4 +83,5 @@ func init() {
 	rootCmd.AddCommand(assignments.AssignmentsCmd)
 	rootCmd.AddCommand(students.StudentsCmd)
 	rootCmd.AddCommand(modules.ModulesCmd)
+	rootCmd.AddCommand(grades.GradesCmd)
 }

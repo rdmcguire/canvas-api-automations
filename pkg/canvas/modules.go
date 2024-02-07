@@ -56,16 +56,16 @@ func (c *Client) GetModuleByID(courseID string, moduleID string) (*canvasauto.Mo
 
 func ModuleString(module *canvasauto.Module, showItems bool) string {
 	str := fmt.Sprintf("%s [published:%s][id:%s] %d Items",
-		StrStrOrNil(module.Name),
-		BoolStrOrNil(module.Published),
-		IntStrOrNil(module.Id),
+		StrOrNil(module.Name),
+		StrOrNil(module.Published),
+		StrOrNil(module.Id),
 		len(*module.Items),
 	)
 	if showItems {
 		for _, item := range *module.Items {
-			str += "\n\tItem: " + StrStrOrNil(item.Title)
-			str += " Url: " + StrStrOrNil(item.ExternalUrl)
-			str += " ID: " + IntStrOrNil(item.Id)
+			str += "\n\tItem: " + StrOrNil(item.Title)
+			str += " Url: " + StrOrNil(item.ExternalUrl)
+			str += " ID: " + StrOrNil(item.Id)
 		}
 	}
 	return str

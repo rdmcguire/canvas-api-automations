@@ -39,9 +39,9 @@ func execAssignmentsShowCmd(cmd *cobra.Command, args []string) {
 			log.Fatal().Msg("Module has no items")
 		}
 		for _, i := range *module.Items {
-			if canvas.StrStrOrNil(i.Type) == "Assignment" {
+			if canvas.StrOrNil(i.Type) == "Assignment" {
 				a, err := client.GetAssignmentById(&canvas.AssignmentOpts{
-					ID:             canvas.IntStrOrNil(i.ContentId),
+					ID:             canvas.StrOrNil(i.ContentId),
 					ModuleItemOpts: &canvas.ModuleItemOpts{CourseID: courseID},
 				})
 				if err != nil {
@@ -50,8 +50,8 @@ func execAssignmentsShowCmd(cmd *cobra.Command, args []string) {
 				}
 				assignments = append(assignments, a)
 			} else {
-				log.Debug().Str("type", canvas.StrStrOrNil(i.Type)).
-					Str("item", canvas.StrStrOrNil(i.Title)).
+				log.Debug().Str("type", canvas.StrOrNil(i.Type)).
+					Str("item", canvas.StrOrNil(i.Title)).
 					Msg("Skipping non-assignment item")
 			}
 		}

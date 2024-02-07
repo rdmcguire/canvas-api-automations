@@ -1,42 +1,34 @@
 package canvas
 
 import (
-	"strconv"
+	"fmt"
 	"time"
 )
 
-func StrStrOrNil(strPtr *string) string {
-	if strPtr == nil {
+func StrOrNil[T any](v *T) string {
+	if v == nil {
 		return "nil"
 	}
 
-	return *strPtr
-}
+	switch vT := any(*v).(type) {
+	case float32, float64:
+		return fmt.Sprintf("%.4f", vT)
 
-func IntStrOrNil(intPtr *int) string {
-	if intPtr == nil {
-		return "nil"
-	}
+	case int, int8, int16, int32, int64:
+		return fmt.Sprintf("%d", vT)
 
-	return strconv.Itoa(*intPtr)
-}
-
-func BoolStrOrNil(boolPtr *bool) string {
-	if boolPtr == nil {
-		return "nil"
-	}
-
-	if *boolPtr {
-		return "true"
-	} else {
+	case bool:
+		if vT {
+			return "true"
+		}
 		return "false"
-	}
-}
 
-func TimeStrOrNil(timePtr *time.Time) string {
-	if timePtr == nil {
-		return "nil"
+	case string:
+		return vT
+
+	case time.Time:
+		return vT.String()
 	}
 
-	return timePtr.String()
+	return "unsupported type ptr"
 }

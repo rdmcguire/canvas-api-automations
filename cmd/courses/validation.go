@@ -17,8 +17,8 @@ func ValidateCourseIdArg(cmd *cobra.Command, args []string, toComplete string,
 	// Then filter and return
 	validCourses := make([]string, 0, len(courses))
 	for _, c := range courses {
-		if strings.HasPrefix(canvas.IntStrOrNil(c.Id), toComplete) {
-			validCourses = append(validCourses, canvas.IntStrOrNil(c.Id))
+		if strings.HasPrefix(canvas.StrOrNil(c.Id), toComplete) {
+			validCourses = append(validCourses, canvas.StrOrNil(c.Id))
 		}
 	}
 

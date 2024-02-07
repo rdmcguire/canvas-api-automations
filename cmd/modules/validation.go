@@ -17,8 +17,8 @@ func ValidateModuleIdArg(cmd *cobra.Command, args []string, toComplete string,
 	// Then filter and return
 	validModules := make([]string, 0, len(modules))
 	for _, m := range modules {
-		if strings.HasPrefix(canvas.IntStrOrNil(m.Id), toComplete) {
-			validModules = append(validModules, canvas.IntStrOrNil(m.Id))
+		if strings.HasPrefix(canvas.StrOrNil(m.Id), toComplete) {
+			validModules = append(validModules, canvas.StrOrNil(m.Id))
 		}
 	}
 

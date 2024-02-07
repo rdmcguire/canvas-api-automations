@@ -13,7 +13,7 @@ import (
 )
 
 var assignmentsUpdateCmd = &cobra.Command{
-	Use:     "update <netacad_assignments.html> <courseID>",
+	Use:     "update <netacad_assignments.html>",
 	Aliases: []string{"fix", "u", "set"},
 	Args:    cobra.ExactArgs(1),
 	Run:     execAssignmentsUpdateCmd,
@@ -107,7 +107,7 @@ func findAssignmentInModule(opts *canvas.ModuleItemOpts) *canvasauto.ModuleItem 
 	if item := client.GetItemByName(opts); item != nil {
 		log.Debug().
 			Str("originalName", origName).
-			Str("foundItem", canvas.StrStrOrNil(item.Title)).
+			Str("foundItem", canvas.StrOrNil(item.Title)).
 			Msg("Replace leading zero match")
 		return item
 	}
@@ -119,7 +119,7 @@ func findAssignmentInModule(opts *canvas.ModuleItemOpts) *canvasauto.ModuleItem 
 		if item := client.GetItemByName(opts); item != nil {
 			log.Debug().
 				Str("originalName", origName).
-				Str("foundItem", canvas.StrStrOrNil(item.Title)).
+				Str("foundItem", canvas.StrOrNil(item.Title)).
 				Msg("Rewrite Exam to Quiz Result")
 			return item
 		}
@@ -133,7 +133,7 @@ func findAssignmentInModule(opts *canvas.ModuleItemOpts) *canvasauto.ModuleItem 
 		if item := client.GetItemByName(opts); item != nil {
 			log.Debug().
 				Str("originalName", origName).
-				Str("foundItem", canvas.StrStrOrNil(item.Title)).
+				Str("foundItem", canvas.StrOrNil(item.Title)).
 				Msg("Rewrite Module Parenthesis")
 			return item
 		}
@@ -142,7 +142,7 @@ func findAssignmentInModule(opts *canvas.ModuleItemOpts) *canvasauto.ModuleItem 
 	// Lastly, be fuzzy
 	opts.Fuzzy = true
 	if item := client.GetItemByName(opts); item != nil {
-		log.Info().Str("foundItem", canvas.StrStrOrNil(item.Title)).
+		log.Info().Str("foundItem", canvas.StrOrNil(item.Title)).
 			Msg("Fuzzy result")
 	}
 
@@ -164,7 +164,7 @@ func updateModuleItemLink(opts *canvas.ModuleItemOpts) {
 	if opts.Item.ExternalUrl != nil {
 		UpdateExternalItemLink(opts)
 
-	} else if canvas.StrStrOrNil(opts.Item.Type) == "Assignment" {
+	} else if canvas.StrOrNil(opts.Item.Type) == "Assignment" {
 		UpdateAssignmentItemLink(opts)
 
 	} else {
@@ -175,7 +175,7 @@ func updateModuleItemLink(opts *canvas.ModuleItemOpts) {
 // Used for items of Type=Assignment
 func UpdateAssignmentItemLink(opts *canvas.ModuleItemOpts) {
 	aOpts := &canvas.AssignmentOpts{
-		ID:             canvas.IntStrOrNil(opts.Item.ContentId),
+		ID:             canvas.StrOrNil(opts.Item.ContentId),
 		ModuleItemOpts: opts,
 	}
 	assignment, err := client.GetAssignmentById(aOpts)
@@ -188,7 +188,7 @@ func UpdateAssignmentItemLink(opts *canvas.ModuleItemOpts) {
 	}
 
 	// Pull links out of description
-	desc := canvas.StrStrOrNil(assignment.Description)
+	desc := canvas.StrOrNil(assignment.Description)
 	matches := linkRegexp.FindStringSubmatch(desc)
 	if len(matches) != 3 {
 		log.Info().Str("desc", desc).
@@ -209,8 +209,8 @@ func UpdateAssignmentItemLink(opts *canvas.ModuleItemOpts) {
 	}
 
 	log.Debug().
-		Str("assignment", canvas.StrStrOrNil(assignment.Name)).
-		Str("description", canvas.StrStrOrNil(assignment.Description)).
+		Str("assignment", canvas.StrOrNil(assignment.Name)).
+		Str("description", canvas.StrOrNil(assignment.Description)).
 		Msg("Updating assignment with new description")
 	log.Info().
 		Str("assignment", canvas.AssignmentString(assignment)).
@@ -234,10 +234,10 @@ func UpdateAssignmentItemLink(opts *canvas.ModuleItemOpts) {
 // Used for items that are an external url link
 func UpdateExternalItemLink(opts *canvas.ModuleItemOpts) {
 	if !dryRun {
-		if canvas.StrStrOrNil(opts.Item.ExternalUrl) != opts.URL {
+		if canvas.StrOrNil(opts.Item.ExternalUrl) != opts.URL {
 			log.Warn().
-				Str("module", canvas.StrStrOrNil(opts.Module.Name)).
-				Str("item", canvas.StrStrOrNil(opts.Item.Title)).
+				Str("module", canvas.StrOrNil(opts.Module.Name)).
+				Str("item", canvas.StrOrNil(opts.Item.Title)).
 				Str("assignment", opts.Name).
 				Str("newLink", opts.URL).
 				Msg("Reconciling link for module item")
@@ -245,7 +245,7 @@ func UpdateExternalItemLink(opts *canvas.ModuleItemOpts) {
 				CourseID: opts.CourseID,
 				Module:   opts.Module,
 				Item:     opts.Item,
-				Name:     canvas.StrStrOrNil(opts.Item.Title),
+				Name:     canvas.StrOrNil(opts.Item.Title),
 				URL:      opts.URL,
 			})
 			if err != nil {
@@ -258,8 +258,8 @@ func UpdateExternalItemLink(opts *canvas.ModuleItemOpts) {
 	}
 
 	log.Debug().
-		Str("Module", canvas.StrStrOrNil(opts.Module.Name)).
-		Str("Item", canvas.StrStrOrNil(opts.Item.Title)).
+		Str("Module", canvas.StrOrNil(opts.Module.Name)).
+		Str("Item", canvas.StrOrNil(opts.Item.Title)).
 		Str("Title", opts.Name).
 		Str("Link", opts.URL).
 		Msg("Found Match")
