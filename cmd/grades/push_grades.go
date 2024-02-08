@@ -3,6 +3,7 @@ package grades
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
@@ -21,7 +22,8 @@ var (
 
 func gradeStudent(cmd *cobra.Command, student *netacad.Student, grades *netacad.Grades) {
 	getAssignmentsFromGrades(cmd, student, grades) // First find matching assignments
-	updateGrades(cmd, student, grades)             // Then update grades
+	getSubmissionsFromGrades(cmd, student, grades)
+	updateGrades(cmd, student, grades) // Then update grades
 }
 
 func updateGrades(cmd *cobra.Command, student *netacad.Student, grades *netacad.Grades) {
@@ -33,15 +35,88 @@ func updateGrades(cmd *cobra.Command, student *netacad.Student, grades *netacad.
 }
 
 func updateGrade(cmd *cobra.Command, student *netacad.Student, grade *netacad.Grade) {
+	log := util.Logger(cmd)
+
 	live, _ := cmd.Flags().GetBool("live")
 	if !live {
-		util.Logger(cmd).Info().
+		log.Info().
 			Str("student", student.Email).
 			Str("module", canvas.StrOrNil(grade.Module.Name)).
 			Str("assignment", canvas.StrOrNil(grade.Assignment.Name)).
-			Float64("grade", grade.Percentage).
+			Int("submissions", len(grade.Submissions)).
+			Float64("percentage", grade.Percentage).
+			Float64("points", grade.Grade).
+			Str("pointsPossible", canvas.StrOrNil(grade.Assignment.PointsPossible)).
 			Msg("DRY RUN grade update")
+	} else {
+		log.Warn().
+			Str("student", student.Email).
+			Str("assignment", canvas.StrOrNil(grade.Assignment.Name)).
+			Msg("Performing live grading")
+		util.Client(cmd).GradeSubmission(&canvas.UpdateSubmissionOpts{
+			Score: fmt.Sprintf("%.3f%%", grade.Percentage),
+			ListSubmissionsOpts: &canvas.ListSubmissionsOpts{
+				CourseID:   util.GetCourseIdStr(cmd),
+				UserID:     strconv.Itoa(int(grade.User.Id)),
+				Assignment: grade.Assignment,
+			},
+		})
 	}
+}
+
+func getSubmissionsFromGrades(cmd *cobra.Command, student *netacad.Student, grades *netacad.Grades) {
+	for _, grade := range *grades {
+		if grade.Assignment == nil {
+			continue
+		}
+
+		getSubmissionsForGrade(cmd, student, grade)
+	}
+}
+
+func getSubmissionsForGrade(cmd *cobra.Command, student *netacad.Student, grade *netacad.Grade) {
+	client := util.Client(cmd)
+	log := util.Logger(cmd)
+
+	user := client.GetUserByEmail(util.GetCourseIdStr(cmd), student.Email)
+	if user == nil {
+		log.Error().Str("student", student.Email).Msg("Failed to locate user")
+	}
+
+	grade.User = user
+
+	submissions, err := client.ListAssignmentSubmissions(&canvas.ListSubmissionsOpts{
+		CourseID:   util.GetCourseIdStr(cmd),
+		Assignment: grade.Assignment,
+		UserID:     strconv.Itoa(int(user.Id)), // filter specific user ID
+	})
+	if err != nil {
+		log.Error().Err(err).Msg("Failed listing submissions for user")
+		return
+	}
+
+	var submission *canvasauto.Submission
+	if len(submissions) > 0 {
+		submission = submissions[len(submissions)-1]
+	}
+
+	if canvas.StrOrNil(submission.WorkflowState) != "unsubmitted" {
+		log.Warn().
+			Str("assignment", *grade.Assignment.Name).
+			Msg("Grade already submitted!")
+	}
+
+	score := ScaleGradeToAssignment(grade.Percentage, *grade.Assignment.PointsPossible)
+	log.Info().Msg(fmt.Sprintf("%s scored %.2f/%.2f (originally %.2f[%.2f%%]) on %s",
+		student.Email,
+		score, *grade.Assignment.PointsPossible,
+		grade.Grade, grade.Percentage,
+		*grade.Assignment.Name))
+
+}
+
+func ScaleGradeToAssignment(gradePercent float64, assignmentPointsPossible float32) float32 {
+	return (float32(gradePercent) / 100) * assignmentPointsPossible
 }
 
 func getAssignmentsFromGrades(cmd *cobra.Command, student *netacad.Student, grades *netacad.Grades) {

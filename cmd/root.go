@@ -73,6 +73,8 @@ func init() {
 		"Sets log level (fatal|error|warn|info|debug|trace)")
 	rootCmd.PersistentFlags().Int("courseID", 0,
 		"Specify course ID, necessary for most sub-commands")
+	rootCmd.PersistentFlags().Bool("readOnly", false,
+		"Set to disable all non-GET http requests such as POST and PUT")
 
 	// Register autocompletion funcs
 	rootCmd.RegisterFlagCompletionFunc("logLevel", validLogLevels)

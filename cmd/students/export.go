@@ -24,7 +24,7 @@ func execStudentsExportCmd(cmd *cobra.Command, args []string) {
 	client := util.Client(cmd)
 	log := util.Logger(cmd)
 
-	users := client.ListStudentsInCourse(util.GetCourseIdStr(cmd))
+	users := client.ListUsersInCourse(util.GetCourseIdStr(cmd))
 	log.Debug().Int("numStudents", len(users)).
 		Msg("Successfully retrieved students from course")
 

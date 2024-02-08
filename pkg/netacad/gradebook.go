@@ -14,10 +14,14 @@ import (
 type Gradebook map[Student]*Grades
 type Grades map[string]*Grade
 type Grade struct {
-	Grade      float64                // Real grade
-	Percentage float64                // Percentage grade
-	Assignment *canvasauto.Assignment // Assignment (to be found)
-	Module     *canvasauto.Module     // Module (to be found)
+	Grade      float64
+	Percentage float64
+	// These fields should be updated once
+	// matching information is found in the canvas API
+	Assignment  *canvasauto.Assignment   // Assignment (to be found)
+	Submissions []*canvasauto.Submission // Submissions (to be loaded)
+	Module      *canvasauto.Module       // Module (to be found)
+	User        *canvasauto.User         // User (to be found)
 }
 
 type Student struct {

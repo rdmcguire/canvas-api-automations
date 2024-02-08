@@ -35,10 +35,13 @@ func SetClient(cmd *cobra.Command, args []string) {
 		log.Fatal().Err(err).Msg("Failed to locate canvas url by flag or env")
 	}
 
+	readOnly, _ := cmd.Flags().GetBool("readOnly")
+
 	client := canvas.MustNewClient(&canvas.ClientOpts{
-		Ctx:   cmd.Context(),
-		Url:   canvasUrl,
-		Token: os.Getenv("CANVAS_TOKEN"),
+		Ctx:      cmd.Context(),
+		Url:      canvasUrl,
+		ReadOnly: readOnly,
+		Token:    os.Getenv("CANVAS_TOKEN"),
 	})
 
 	cmd.SetContext(context.WithValue(cmd.Context(), "client", client))
