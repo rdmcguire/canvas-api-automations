@@ -7,14 +7,17 @@ import (
 	"regexp"
 	"strconv"
 
+	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
 	"golang.org/x/exp/slices"
 )
 
 type Gradebook map[Student]*Grades
 type Grades map[string]*Grade
 type Grade struct {
-	Grade      float64
-	Percentage float64
+	Grade      float64                // Real grade
+	Percentage float64                // Percentage grade
+	Assignment *canvasauto.Assignment // Assignment (to be found)
+	Module     *canvasauto.Module     // Module (to be found)
 }
 
 type Student struct {

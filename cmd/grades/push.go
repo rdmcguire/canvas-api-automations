@@ -40,7 +40,7 @@ func execGradesPushCmd(cmd *cobra.Command, args []string) {
 			continue
 		}
 
-		log.Info().Str("email", student.Email).
+		log.Debug().Str("email", student.Email).
 			Int("gradesLoaded", grades.Count()).
 			Msg("Found student for grading")
 		log.Debug().Str("email", student.Email).
