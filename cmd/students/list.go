@@ -19,7 +19,7 @@ func execStudentsListCmd(cmd *cobra.Command, args []string) {
 	courseID := util.GetCourseIdStr(cmd)
 
 	util.Logger(cmd).Debug().Str("courseID", courseID).Msg("Listing students")
-	students := client.ListUsersInCourse(courseID)
+	students := client.ListUsersInCourse(courseID, "")
 	for _, student := range students {
 		log.Info().
 			Str("Name", canvas.StrOrNil(student.Name)).

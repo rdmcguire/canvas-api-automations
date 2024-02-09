@@ -15,7 +15,7 @@ var GradesCmd = &cobra.Command{
 func init() {
 	GradesCmd.AddCommand(gradesDumpCmd)
 	GradesCmd.AddCommand(gradesPushCmd)
-	GradesCmd.AddCommand(gradesDumpCmd)
+	GradesCmd.AddCommand(gradesShowCmd)
 
 	GradesCmd.PersistentFlags().StringArray("email", []string{}, "Restrict to a provided email addresses")
 }

@@ -79,8 +79,6 @@ func getSubmissionsForGrade(cmd *cobra.Command, student *netacad.Student, grade 
 	log := util.Logger(cmd)
 	overwrite, _ := cmd.Flags().GetBool("overwrite")
 
-	cmd.DebugFlags()
-
 	user := client.GetUserByEmail(util.GetCourseIdStr(cmd), student.Email)
 	if user == nil {
 		log.Error().Str("student", student.Email).Msg("Failed to locate user")
@@ -114,12 +112,12 @@ func getSubmissionsForGrade(cmd *cobra.Command, student *netacad.Student, grade 
 		if overwrite {
 			log.Warn().
 				Str("assignment", *grade.Assignment.Name).
-				Msg("Grade already submitted, skipping...")
-			grade.Assignment = nil
+				Msg("Grade already submitted, overwrite enabled!")
 		} else {
 			log.Warn().
 				Str("assignment", *grade.Assignment.Name).
-				Msg("Grade already submitted, overwrite enabled!")
+				Msg("Grade already submitted, skipping...")
+			grade.Assignment = nil
 		}
 	}
 }

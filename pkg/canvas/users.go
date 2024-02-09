@@ -9,7 +9,7 @@ import (
 )
 
 func (c *Client) GetUserByEmail(courseID string, email string) *canvasauto.User {
-	for _, user := range c.ListUsersInCourse(courseID) {
+	for _, user := range c.ListUsersInCourse(courseID, "") {
 		if strings.ToLower(StrOrNil(user.Email)) == strings.ToLower(email) {
 			return user
 		}
@@ -17,19 +17,22 @@ func (c *Client) GetUserByEmail(courseID string, email string) *canvasauto.User 
 	return nil
 }
 
-func (c *Client) ListUsersInCourse(courseID string) []*canvasauto.User {
+func (c *Client) ListUsersInCourse(courseID string, search string) []*canvasauto.User {
 	users := make([]*canvasauto.User, 0)
 	role := "StudentEnrollment"
 	page := 1
 	for {
 		pageUsers := make([]*canvasauto.User, 0)
-		r, err := c.api.ListUsersInCourseUsers(c.ctx, courseID,
-			&canvasauto.ListUsersInCourseUsersParams{
-				Page:           &page,
-				PerPage:        &DefPerPage,
-				EnrollmentRole: &role,
-			},
-		)
+		params := &canvasauto.ListUsersInCourseUsersParams{
+			Page:           &page,
+			PerPage:        &DefPerPage,
+			EnrollmentRole: &role,
+		}
+		if search != "" {
+			params.SearchTerm = &search
+		}
+
+		r, err := c.api.ListUsersInCourseUsers(c.ctx, courseID, params)
 		if err != nil || r.Body == nil {
 			log.Error().Err(err)
 		}

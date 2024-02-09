@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
+	"golang.org/x/exp/slices"
 	"k8s.io/utils/ptr"
 )
 
@@ -40,7 +41,44 @@ func (c *Client) GetAssignmentById(opts *AssignmentOpts) (*canvasauto.Assignment
 	return decodeAssignmentResponse(r)
 }
 
-func (c *Client) ListAssignments(courseID string, modules ...int) ([]*canvasauto.Assignment, error) {
+func (c *Client) ListAssignmentsByModule(courseID string, moduleIDs ...int,
+) map[*canvasauto.Module][]*canvasauto.Assignment {
+	moduleAssignments := make(map[*canvasauto.Module][]*canvasauto.Assignment, 0)
+
+	// First get modules
+	modules := c.ListModules(courseID)
+	for _, module := range modules {
+		if len(moduleIDs) > 0 && !slices.Contains(moduleIDs, *module.Id) {
+			continue
+		}
+		moduleAssignments[module] = c.GetAssignmentsFromModule(courseID, module)
+	}
+	return moduleAssignments
+}
+
+func (c *Client) GetAssignmentsFromModule(courseID string, module *canvasauto.Module) []*canvasauto.Assignment {
+	assignments := make([]*canvasauto.Assignment, 0)
+	if module.Items == nil {
+		return assignments
+	}
+
+	for _, i := range *module.Items {
+		if StrOrNil(i.Type) == "Assignment" {
+			assignment, err := c.GetAssignmentById(&AssignmentOpts{
+				ModuleItemOpts: &ModuleItemOpts{
+					CourseID: courseID,
+				},
+				ID: StrOrNil(i.ContentId),
+			})
+			if err == nil && assignment != nil {
+				assignments = append(assignments, assignment)
+			}
+		}
+	}
+	return assignments
+}
+
+func (c *Client) ListAssignments(courseID string) ([]*canvasauto.Assignment, error) {
 	assignments := make([]*canvasauto.Assignment, 0)
 	opts := &canvasauto.ListAssignmentsParams{Page: ptr.To("1")}
 	page := 1

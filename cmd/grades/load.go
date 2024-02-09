@@ -11,7 +11,7 @@ import (
 var gradesDumpCmd = &cobra.Command{
 	Use:     "dump <grade_export.csv>",
 	Args:    cobra.ExactArgs(1),
-	Aliases: []string{"load", "show"},
+	Aliases: []string{"load"},
 	Short:   "Load grades from csv and display them",
 	Long:    `Mosly useful for debugging export from Netacad`,
 	Run:     execGradesDumpCmd,
