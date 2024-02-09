@@ -12,6 +12,8 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+const gradeMsg = "graded by automation <https://github.com/rdmcguire/canvas-api-automations>"
+
 type UpdateSubmissionOpts struct {
 	// Score can be in multiple formats
 	// Reference https://canvas.instructure.com/doc/api/submissions.html#method.submissions_api.update
@@ -29,7 +31,7 @@ type ListSubmissionsOpts struct {
 func (c *Client) GradeSubmission(opts *UpdateSubmissionOpts) error {
 	update := &canvasauto.GradeOrCommentOnSubmissionSectionsJSONBody{
 		SubmissionPostedGrade: ptr.To(opts.Score),
-		CommentTextComment:    ptr.To("graded by automation"),
+		CommentTextComment:    ptr.To(gradeMsg),
 	}
 	updateBody, _ := json.Marshal(*update)
 
