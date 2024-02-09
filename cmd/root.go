@@ -54,8 +54,13 @@ func rootCmdPreRun(cmd *cobra.Command, args []string) {
 	logger := log.
 		Output(zerolog.ConsoleWriter{Out: os.Stderr}).
 		Level(logLevel)
+	ctx := logger.WithContext(cmd.Context())
 
-	cmd.SetContext(logger.WithContext(cmd.Context()))
+	// Add any extra settings to context
+	readOnly, _ := cmd.Flags().GetBool("readOnly")
+	ctx = context.WithValue(ctx, "readOnly", readOnly)
+
+	cmd.SetContext(ctx)
 
 	// Set globals
 	log.Logger = logger

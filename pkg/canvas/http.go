@@ -33,6 +33,7 @@ type ClientRoundTripper struct {
 }
 
 func (c ClientRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	readOnly := r.Context().Value("readOnly")
 	// Need to fix this broken awful auto-generated code
 	// API seemingly does not support JSON body, and requires
 	// form data. Irritatingly, json body does seem to work with curl
@@ -69,6 +70,12 @@ func (c ClientRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	}
 
 	// Perform the request
+	if r.Method != http.MethodGet && readOnly.(bool) {
+		log.Warn().Msg("Global readOnly enabled, printing request only!")
+		pretty.PrintRequest(r)
+		return nil, nil
+	}
+
 	resp, err := http.DefaultTransport.RoundTrip(r)
 
 	// Debug response

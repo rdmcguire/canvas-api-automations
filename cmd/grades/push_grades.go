@@ -77,6 +77,9 @@ func getSubmissionsFromGrades(cmd *cobra.Command, student *netacad.Student, grad
 func getSubmissionsForGrade(cmd *cobra.Command, student *netacad.Student, grade *netacad.Grade) {
 	client := util.Client(cmd)
 	log := util.Logger(cmd)
+	overwrite, _ := cmd.Flags().GetBool("overwrite")
+
+	cmd.DebugFlags()
 
 	user := client.GetUserByEmail(util.GetCourseIdStr(cmd), student.Email)
 	if user == nil {
@@ -100,12 +103,6 @@ func getSubmissionsForGrade(cmd *cobra.Command, student *netacad.Student, grade 
 		submission = submissions[len(submissions)-1]
 	}
 
-	if canvas.StrOrNil(submission.WorkflowState) != "unsubmitted" {
-		log.Warn().
-			Str("assignment", *grade.Assignment.Name).
-			Msg("Grade already submitted!")
-	}
-
 	score := ScaleGradeToAssignment(grade.Percentage, *grade.Assignment.PointsPossible)
 	log.Info().Msg(fmt.Sprintf("%s scored %.2f/%.2f (originally %.2f[%.2f%%]) on %s",
 		student.Email,
@@ -113,6 +110,18 @@ func getSubmissionsForGrade(cmd *cobra.Command, student *netacad.Student, grade 
 		grade.Grade, grade.Percentage,
 		*grade.Assignment.Name))
 
+	if canvas.StrOrNil(submission.WorkflowState) != "unsubmitted" {
+		if overwrite {
+			log.Warn().
+				Str("assignment", *grade.Assignment.Name).
+				Msg("Grade already submitted, skipping...")
+			grade.Assignment = nil
+		} else {
+			log.Warn().
+				Str("assignment", *grade.Assignment.Name).
+				Msg("Grade already submitted, overwrite enabled!")
+		}
+	}
 }
 
 func ScaleGradeToAssignment(gradePercent float64, assignmentPointsPossible float32) float32 {

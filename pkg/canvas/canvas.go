@@ -11,17 +11,15 @@ import (
 )
 
 type Client struct {
-	token    string
-	ctx      context.Context
-	api      *canvasauto.Client
-	readOnly bool
+	token string
+	ctx   context.Context
+	api   *canvasauto.Client
 }
 
 type ClientOpts struct {
-	Ctx      context.Context
-	Url      *url.URL
-	Token    string
-	ReadOnly bool
+	Ctx   context.Context
+	Url   *url.URL
+	Token string
 }
 
 func (c *Client) String() string {
@@ -30,9 +28,8 @@ func (c *Client) String() string {
 
 func MustNewClient(opts *ClientOpts) *Client {
 	client := &Client{
-		token:    opts.Token,
-		ctx:      opts.Ctx,
-		readOnly: opts.ReadOnly,
+		token: opts.Token,
+		ctx:   opts.Ctx,
 	}
 
 	// Create client with request and response middleware

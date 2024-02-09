@@ -40,7 +40,7 @@ func (c *Client) GradeSubmission(opts *UpdateSubmissionOpts) error {
 		"application/json",
 		bytes.NewReader(updateBody),
 	)
-	if r.StatusCode != 200 {
+	if r != nil && r.StatusCode != 200 {
 		return errors.New(fmt.Sprintf("Received non-200 response for submission update (%d)",
 			r.StatusCode))
 	}
