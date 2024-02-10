@@ -3,6 +3,8 @@ package grades
 import (
 	"sync"
 
+	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/assignments"
+	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/modules"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvas"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
@@ -138,4 +140,7 @@ func init() {
 	gradesShowCmd.Flags().IntSliceP("assignmentID", "a", []int{}, "Filter by assignment ID")
 	gradesShowCmd.Flags().BoolP("gradedOnly", "g", false, "Restrict to graded grades only")
 	gradesShowCmd.Flags().BoolP("ungradedOnly", "G", false, "Restrict to ungraded grades only")
+
+	gradesShowCmd.RegisterFlagCompletionFunc("moduleID", modules.ValidateModuleIdArg)
+	gradesShowCmd.RegisterFlagCompletionFunc("assignmentID", assignments.ValidAssignmentIdArg)
 }
