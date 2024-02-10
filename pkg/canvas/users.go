@@ -2,11 +2,36 @@ package canvas
 
 import (
 	"encoding/json"
+	"strconv"
 	"strings"
+	"sync"
 
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
 	"github.com/rs/zerolog/log"
 )
+
+type UserCache struct {
+	lock  sync.Mutex
+	users map[int]*canvasauto.User
+}
+
+func (c *Client) GetUserById(courseID string, id int) *canvasauto.User {
+	c.userCache.lock.Lock()
+	defer c.userCache.lock.Unlock()
+
+	if user, set := c.userCache.users[id]; set {
+		return user
+	}
+
+	foundUsers := c.ListUsersInCourse(courseID, strconv.Itoa(id))
+	if len(foundUsers) < 1 {
+		return nil
+	}
+	user := foundUsers[0]
+	c.userCache.users[id] = user
+
+	return user
+}
 
 func (c *Client) GetUserByEmail(courseID string, email string) *canvasauto.User {
 	for _, user := range c.ListUsersInCourse(courseID, "") {

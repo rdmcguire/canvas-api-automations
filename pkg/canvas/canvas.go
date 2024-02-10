@@ -11,9 +11,10 @@ import (
 )
 
 type Client struct {
-	token string
-	ctx   context.Context
-	api   *canvasauto.Client
+	token     string
+	ctx       context.Context
+	api       *canvasauto.Client
+	userCache *UserCache
 }
 
 type ClientOpts struct {
@@ -30,6 +31,9 @@ func MustNewClient(opts *ClientOpts) *Client {
 	client := &Client{
 		token: opts.Token,
 		ctx:   opts.Ctx,
+		userCache: &UserCache{
+			users: make(map[int]*canvasauto.User),
+		},
 	}
 
 	// Create client with request and response middleware

@@ -1,6 +1,8 @@
 package grades
 
 import (
+	"sync"
+
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvas"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
@@ -18,9 +20,10 @@ These can each be provided multiple times, or comma-delimeted`,
 }
 
 // Cache users to prevent repeat lookups
-var users = make(map[int]*canvasauto.User, 0)
-
-var gradedOnly, ungradedOnly bool
+var (
+	gradedOnly, ungradedOnly bool
+	wg                       sync.WaitGroup
+)
 
 func execShowGradesCmd(cmd *cobra.Command, args []string) {
 	log := util.Logger(cmd)
@@ -39,24 +42,29 @@ func execShowGradesCmd(cmd *cobra.Command, args []string) {
 		Msg("Listing grades")
 
 	assignments := listAssignments(cmd)
+
+	// Start smashing against assignments in goroutines
 	for _, a := range assignments {
-		log.Debug().
-			Str("assignment", canvas.StrOrNil(a.Name)).
-			Int("ID", *a.Id).
-			Msg("Found assignment")
-		showAssignment(cmd, a)
+		wg.Add(1)
+		go showAssignment(cmd, a)
 	}
+	wg.Wait()
 }
 
 func showAssignment(cmd *cobra.Command, assignment *canvasauto.Assignment) {
+	defer wg.Done()
 	log := util.Logger(cmd)
+	log.Debug().
+		Str("assignment", canvas.StrOrNil(assignment.Name)).
+		Int("ID", *assignment.Id).
+		Msg("Found assignment")
 	for _, s := range listSubmissions(cmd, assignment) {
 		if gradedOnly && *s.WorkflowState != "graded" {
 			continue
 		} else if ungradedOnly && *s.WorkflowState == "graded" {
 			continue
 		}
-		user := users[*s.UserId]
+		user := util.Client(cmd).GetUserById(util.GetCourseIdStr(cmd), *s.UserId)
 		if user == nil {
 			panic(*s)
 		}
@@ -84,19 +92,13 @@ func listSubmissions(cmd *cobra.Command, assignment *canvasauto.Assignment) []*c
 
 	filteredSubmissions := make([]*canvasauto.Submission, 0, len(submissions))
 	for _, s := range submissions {
-		var user *canvasauto.User
-		var set bool
-		if user, set = users[*s.UserId]; !set {
-			foundUsers := client.ListUsersInCourse(util.GetCourseIdStr(cmd), canvas.StrOrNil(s.UserId))
-			if len(foundUsers) < 1 {
-				log.Debug().
-					Int("userID", *s.UserId).
-					Any("submission", *s).
-					Msg("Failed to find user from assignment, ignoring submission")
-				continue
-			}
-			user = foundUsers[0]
-			users[*s.UserId] = user
+		user := client.GetUserById(util.GetCourseIdStr(cmd), *s.UserId)
+		if user == nil {
+			log.Debug().
+				Int("userID", *s.UserId).
+				Any("submission", *s).
+				Msg("Failed to find user from assignment, ignoring submission")
+			continue
 		}
 
 		if len(emails) > 0 && !slices.Contains(emails, *user.Email) {
