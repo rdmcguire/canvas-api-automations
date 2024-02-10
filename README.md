@@ -26,10 +26,12 @@ of straight up HTML, such as for swapping links for module items.
         * The html comes from the "Course Home", with all the links
     * Run the command like `canvas-api-automations assignments course.html 99999` where 99999 is the
       id of the canvas course you found running the classes subcommand
-
-## TODO
-
-* Grading. All of it.
+* Grades
+    * Displays grades with the ability to filter on:
+      * One or more modules
+      * One or more assignments
+      * One or more emails
+      * Graded or Ungraded assignments
 
 ## Weird Stuff
 

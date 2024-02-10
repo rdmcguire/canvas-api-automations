@@ -1,3 +1,4 @@
 # TODO
 
-- [ ] Implement global --readOnly
+- [ ] Implement user caching for all funcs
+- [x] Implement global --readOnly
