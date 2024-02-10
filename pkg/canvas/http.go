@@ -85,7 +85,7 @@ func (c ClientRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 		fmt.Println(pterm.Info.Sprint("< END HTTP RESPONSE") + "\n")
 	}
 
-	if resp.StatusCode != 200 {
+	if err == nil && resp.StatusCode != 200 {
 		body, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
 		return nil, errors.New(fmt.Sprintf("Received non-200 response: %s",

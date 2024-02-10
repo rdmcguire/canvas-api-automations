@@ -1,6 +1,7 @@
 package grades
 
 import (
+	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/students"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
 	"github.com/spf13/cobra"
 )
@@ -18,4 +19,5 @@ func init() {
 	GradesCmd.AddCommand(gradesShowCmd)
 
 	GradesCmd.PersistentFlags().StringArray("email", []string{}, "Restrict to a provided email addresses")
+	GradesCmd.RegisterFlagCompletionFunc("email", students.ValidateEmailArg)
 }
