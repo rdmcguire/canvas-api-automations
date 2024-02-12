@@ -91,4 +91,5 @@ func init() {
 	rootCmd.AddCommand(students.StudentsCmd)
 	rootCmd.AddCommand(modules.ModulesCmd)
 	rootCmd.AddCommand(grades.GradesCmd)
+	rootCmd.AddCommand(docsCmd)
 }
