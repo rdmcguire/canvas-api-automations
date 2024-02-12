@@ -9,7 +9,8 @@ canvas-api-automations docs [flags]
 ### Options
 
 ```
-  -h, --help   help for docs
+      --docsDir string   Set output path for generated documentation (default "./docs")
+  -h, --help             help for docs
 ```
 
 ### Options inherited from parent commands

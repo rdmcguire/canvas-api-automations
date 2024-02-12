@@ -23,6 +23,8 @@ func execDocsCmd(cmd *cobra.Command, args []string) {
 	log := util.Logger(cmd)
 	s, e := os.Stat(docsDir)
 
+	docsDir, _ := cmd.Flags().GetString("docsDir")
+
 	// Check if the directory exists, otherwise try to
 	// create it
 	if errors.Is(e, os.ErrNotExist) {
@@ -47,4 +49,8 @@ func execDocsCmd(cmd *cobra.Command, args []string) {
 	if err := doc.GenMarkdownTree(rootCmd, docsDir); err != nil {
 		log.Fatal().Err(err).Msg("Failed to generate documentation")
 	}
+}
+
+func init() {
+	docsCmd.Flags().String("docsDir", docsDir, "Set output path for generated documentation")
 }
