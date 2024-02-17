@@ -11,10 +11,11 @@ import (
 )
 
 type Client struct {
-	token     string
-	ctx       context.Context
-	api       *canvasauto.Client
-	userCache *UserCache
+	token       string
+	ctx         context.Context
+	api         *canvasauto.Client
+	userCache   *UserCache
+	moduleCache *ModuleCache
 }
 
 type ClientOpts struct {
@@ -33,6 +34,9 @@ func MustNewClient(opts *ClientOpts) *Client {
 		ctx:   opts.Ctx,
 		userCache: &UserCache{
 			users: make(map[int]*canvasauto.User),
+		},
+		moduleCache: &ModuleCache{
+			modules: make(map[int]*canvasauto.Module),
 		},
 	}
 

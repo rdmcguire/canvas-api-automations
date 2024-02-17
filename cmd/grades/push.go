@@ -19,6 +19,8 @@ you must add --live to commit the grades, else it will simply
 display proposed changes to the gradebook.`,
 }
 
+var assignmentCache *util.AssignmentCache
+
 func execGradesPushCmd(cmd *cobra.Command, args []string) {
 	log := util.Logger(cmd)
 
@@ -34,6 +36,8 @@ func execGradesPushCmd(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load netacad grade export csv")
 	}
+
+	assignmentCache = util.NewAssignmentCache()
 
 	for student, grades := range *gradebook {
 		if grades.Count() == 0 {

@@ -152,6 +152,19 @@ func getAssignmentFromGrade(cmd *cobra.Command, item string,
 		Fuzzy:       false,
 	}
 
+	// First try to retrieve from cache
+	if assignmentCache.LostCause(item) {
+		log.Debug().Str("item", item).Msg("Skipping item, already known to be a lost cause")
+		return nil, nil
+	}
+
+	if assignment, getOpts.Module = assignmentCache.Get(item); assignment != nil {
+		log.Debug().
+			Str("name", *assignment.Name).
+			Msg("Found assignment in assignment cache")
+		return assignment, getOpts.Module
+	}
+
 	// Try with a full match (probably a waste of time)
 	if assignment = tryFullNameMatch(cmd, getOpts); assignment != nil {
 		goto Found
@@ -168,7 +181,9 @@ func getAssignmentFromGrade(cmd *cobra.Command, item string,
 	}
 
 Found:
+	// Add found item to cache and return it
 	if assignment != nil {
+		assignmentCache.Set(item, assignment, getOpts.Module)
 		log.Debug().
 			Str("assignment", canvas.StrOrNil(assignment.Name)).
 			Str("item", getOpts.Name).
@@ -176,6 +191,7 @@ Found:
 			Msg("Match found!")
 	} else {
 		log.Warn().Str("item", getOpts.Name).Msg("Failed to locate grade item match")
+		assignmentCache.IsLostCause(item) // Don't bother trying a second time
 	}
 
 	return assignment, getOpts.Module
