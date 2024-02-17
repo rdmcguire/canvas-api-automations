@@ -23,18 +23,45 @@ unsubmitted work with a grade of 0, or a grade provided by the
 
 func execGradesBulkCmd(cmd *cobra.Command, args []string) {
 	log := util.Logger(cmd)
+	client := util.Client(cmd)
 
 	log.Info().Msg("Locating modules for bulk grading")
 
+	// First select a module
 	module := FuzzyFindModule(cmd)
-
-	log.Info().Str("module", canvas.StrOrNil(module.Name)).
+	log.Info().
+		Str("module", canvas.StrOrNil(module.Name)).
 		Msg("Module selected, now selecting an assignment")
 
+	// Second select an assignment
 	assignment := FuzzyFindAssignment(cmd, module)
-	log.Info().Str("module", canvas.StrOrNil(module.Name)).
+	log.Info().
+		Str("module", canvas.StrOrNil(module.Name)).
 		Str("assignment", canvas.StrOrNil(assignment.Name)).
 		Msg("Assignment selected, locating submissions")
+
+	// Third get applicable submissions
+	submissions, err := client.ListAssignmentSubmissions(&canvas.ListSubmissionsOpts{
+		CourseID:   util.GetCourseIdStr(cmd),
+		Module:     module,
+		Assignment: assignment,
+	})
+	if err != nil {
+		log.Fatal().Err(err).
+			Str("module", canvas.StrOrNil(module.Name)).
+			Str("assignment", canvas.StrOrNil(assignment.Name)).
+			Msg("Failed to list assignment submissions")
+	}
+
+	for _, s := range submissions {
+		if canvas.StrOrNil(s.WorkflowState) != "unsubmitted" {
+			continue
+		}
+		log.Info().
+			Str("state", canvas.StrOrNil(s.WorkflowState)).
+			Str("student", canvas.StrOrNil(s.UserId)).
+			Msg("Found submission for bulk grading")
+	}
 }
 
 func FuzzyFindAssignment(cmd *cobra.Command, module *canvasauto.Module) *canvasauto.Assignment {
