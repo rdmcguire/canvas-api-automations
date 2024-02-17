@@ -17,6 +17,7 @@ func init() {
 	GradesCmd.AddCommand(gradesDumpCmd)
 	GradesCmd.AddCommand(gradesPushCmd)
 	GradesCmd.AddCommand(gradesShowCmd)
+	GradesCmd.AddCommand(gradesBulkCmd)
 
 	GradesCmd.PersistentFlags().StringArray("email", []string{}, "Restrict to a provided email addresses")
 	GradesCmd.RegisterFlagCompletionFunc("email", students.ValidateEmailArg)
