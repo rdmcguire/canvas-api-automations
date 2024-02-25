@@ -21,8 +21,8 @@ var assignmentsUpdateCmd = &cobra.Command{
 
 // Set this to false if an assignnment containing
 // the string "Final Exam" should be used. This is due to
-// the option for "Final Comprehensive Exam" and the awful job
-// whomever manually click-grunted these assignments into Canvas did
+// the option for "Final Comprehensive Exam" and inconsistencies with
+// the assignments that were created in this template in Canvas
 const skipFinalNotComprehensive = true
 
 var (

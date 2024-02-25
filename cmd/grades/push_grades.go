@@ -17,6 +17,7 @@ import (
 // Patterns for grade items
 var (
 	chapterExamRegexp  = regexp.MustCompile(`.*Chapter (\d+) Exam`)
+	chapterLabRegexp   = regexp.MustCompile(`.*Lab (\d+)`)
 	externalToolRegexp = regexp.MustCompile(`External tool: (.*)`)
 )
 
@@ -52,6 +53,7 @@ func updateGrade(cmd *cobra.Command, student *netacad.Student, grade *netacad.Gr
 		log.Warn().
 			Str("student", student.Email).
 			Str("assignment", canvas.StrOrNil(grade.Assignment.Name)).
+			Str("score", fmt.Sprintf("%.3f%%", grade.Percentage)).
 			Msg("Performing live grading")
 		util.Client(cmd).GradeSubmission(&canvas.UpdateSubmissionOpts{
 			Score: fmt.Sprintf("%.3f%%", grade.Percentage),
@@ -152,12 +154,13 @@ func getAssignmentFromGrade(cmd *cobra.Command, item string,
 		Fuzzy:       false,
 	}
 
-	// First try to retrieve from cache
+	// First check if we have already seen this and failed to find it
 	if assignmentCache.LostCause(item) {
 		log.Debug().Str("item", item).Msg("Skipping item, already known to be a lost cause")
 		return nil, nil
 	}
 
+	// Then try to retrieve from cache
 	if assignment, getOpts.Module = assignmentCache.Get(item); assignment != nil {
 		log.Debug().
 			Str("name", *assignment.Name).
@@ -177,6 +180,11 @@ func getAssignmentFromGrade(cmd *cobra.Command, item string,
 
 	// Try extracting from "Chapter XX Exam" -> "Quiz XX"
 	if assignment = tryExamToQuiz(cmd, getOpts); assignment != nil {
+		goto Found
+	}
+
+	// Try extracting from "Lab 0X" -> "Lab X"
+	if assignment = tryLabZeroPadded(cmd, getOpts); assignment != nil {
 		goto Found
 	}
 
@@ -205,6 +213,28 @@ func tryFullNameMatch(cmd *cobra.Command, opts *canvas.ModuleItemOpts) *canvasau
 		opts.Module = getModuleFromItem(cmd, found)
 		return getAssignmentFromItem(cmd, found, opts)
 	}
+	return nil
+}
+
+// Attempts to locate an assignment where the name is Lab X but
+// the graded item is zero-padded. Also strips the annoying
+// External Tool: prefix
+func tryLabZeroPadded(cmd *cobra.Command, opts *canvas.ModuleItemOpts) *canvasauto.Assignment {
+	matches := chapterLabRegexp.FindStringSubmatch(opts.Name)
+	if len(matches) < 2 {
+		return nil
+	}
+
+	newOpts := *opts
+
+	// Try stripping leading zeroes
+	newOpts.Name = fmt.Sprintf("Lab %s", strings.TrimPrefix(matches[1], "0"))
+	log.Debug().Str("name", newOpts.Name).Msg("Attempting lab without leading zeroes")
+	if found := util.Client(cmd).FindItem(&newOpts); found != nil {
+		opts.Module = getModuleFromItem(cmd, found)
+		return getAssignmentFromItem(cmd, found, &newOpts)
+	}
+
 	return nil
 }
 
@@ -244,7 +274,7 @@ func tryExamToQuiz(cmd *cobra.Command, opts *canvas.ModuleItemOpts) *canvasauto.
 
 	// Try stripping leading zeroes
 	newOpts.Name = fmt.Sprintf("Quiz %s", strings.TrimPrefix(matches[1], "0"))
-	log.Debug().Str("name", newOpts.Name).Msg("Attempting exam -> quiz withour leading zeroes")
+	log.Debug().Str("name", newOpts.Name).Msg("Attempting exam -> quiz without leading zeroes")
 	if found := util.Client(cmd).FindItem(&newOpts); found != nil {
 		opts.Module = getModuleFromItem(cmd, found)
 		return getAssignmentFromItem(cmd, found, &newOpts)
