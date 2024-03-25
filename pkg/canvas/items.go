@@ -3,6 +3,7 @@ package canvas
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
 	"github.com/lithammer/fuzzysearch/fuzzy"
@@ -16,6 +17,7 @@ type ModuleItemOpts struct {
 	URL         string                 // New URL if updating item
 	Insensitive bool                   // Enables case-insensitive search
 	Fuzzy       bool                   // Enables fuzzy search
+	Contains    bool                   // Not so fuzzy but fuzzy-er
 }
 
 func (c *Client) UpdateModuleItemLink(opts *ModuleItemOpts) (*canvasauto.ModuleItem, error) {
@@ -54,14 +56,21 @@ func (c *Client) GetItemByName(opts *ModuleItemOpts) *canvasauto.ModuleItem {
 		return item
 	}
 
-	// Then get fuzzy if we want to
-	if opts.Fuzzy {
-		itemStrings := GetItemsStrings(opts.Module.Items)
+	// Try harder
+	itemStrings := GetItemsStrings(opts.Module.Items)
+	if opts.Contains {
+		for _, s := range itemStrings {
+			if strings.Contains(s, opts.Name) {
+				return GetItemByTitle(opts.Module.Items, s)
+			}
+		}
+	} else if opts.Fuzzy {
 		matches := fuzzy.FindFold(opts.Name, itemStrings)
 		if len(matches) > 0 {
 			return GetItemByTitle(opts.Module.Items, matches[0])
 		}
 	}
+
 	return nil
 }
 

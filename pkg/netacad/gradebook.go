@@ -2,6 +2,7 @@ package netacad
 
 import (
 	"encoding/csv"
+	"errors"
 	"io"
 	"os"
 	"regexp"
@@ -35,12 +36,46 @@ var (
 	gradeRegexp     = regexp.MustCompile(`(.*) \((Real|Percentage)\)`)
 	pcntGradeRegexp = regexp.MustCompile(`([0-9.]+) ?%`)
 	isGradeRegexp   = regexp.MustCompile(`^[0-9]+(\.[0-9]+)? ?%?`)
+	isTotalRegexp   = regexp.MustCompile(`total$`)
 )
 
 type LoadGradesFromFileOpts struct {
 	File           string   // Path to Netacad csv export
 	Emails         []string // Optional email filter
 	WithGradesOnly bool     // Only return students with gradeable items
+}
+
+// Returns a list of assignments from the given file
+// Filters out totals columns
+func Assignments(opts *LoadGradesFromFileOpts) ([]string, error) {
+	assignments := make([]string, 0)
+
+	f, err := os.Open(opts.File)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	data := csv.NewReader(f)
+	headers, err := data.Read() // Read one row
+	if err != nil {
+		return assignments, err
+	} else if len(headers) < 1 {
+		return assignments, errors.New("No headers found in grade export")
+	}
+
+	for _, h := range headers {
+		name, _ := GradeItemFromHeader(h)
+		if name == "" {
+			continue
+		} else if isTotalRegexp.Match([]byte(name)) {
+			continue
+		} else if !slices.Contains(assignments, name) {
+			assignments = append(assignments, name)
+		}
+	}
+
+	return assignments, nil
 }
 
 // In Netacad, go to Grades -> Export, select
@@ -71,7 +106,7 @@ func LoadGradesFromFile(opts *LoadGradesFromFileOpts) (*Gradebook, error) {
 				goto Next
 			}
 		}
-		gradebook.LoadRow(rowData)
+		gradebook.loadRow(rowData)
 
 	Next:
 		if err == io.EOF {
@@ -92,7 +127,7 @@ func rowToMap(headers []string, row []string) map[string]string {
 	return data
 }
 
-func (g *Gradebook) LoadRow(row map[string]string) {
+func (g *Gradebook) loadRow(row map[string]string) {
 	id, err := strconv.ParseInt(row["ID number"], 10, 64)
 	if err != nil {
 		return

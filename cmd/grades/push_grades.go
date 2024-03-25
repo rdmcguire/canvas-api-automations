@@ -19,6 +19,7 @@ var (
 	chapterExamRegexp  = regexp.MustCompile(`.*Chapter (\d+) Exam`)
 	chapterLabRegexp   = regexp.MustCompile(`.*Lab (\d+)`)
 	externalToolRegexp = regexp.MustCompile(`External tool: (.*)`)
+	finalRegexp        = regexp.MustCompile(`(Final.*Exam)`)
 )
 
 func gradeStudent(cmd *cobra.Command, student *netacad.Student, grades *netacad.Grades) {
@@ -154,6 +155,10 @@ func getAssignmentFromGrade(cmd *cobra.Command, item string,
 		Fuzzy:       false,
 	}
 
+	if assignmentCache == nil {
+		assignmentCache = util.NewAssignmentCache()
+	}
+
 	// First check if we have already seen this and failed to find it
 	if assignmentCache.LostCause(item) {
 		log.Debug().Str("item", item).Msg("Skipping item, already known to be a lost cause")
@@ -188,6 +193,16 @@ func getAssignmentFromGrade(cmd *cobra.Command, item string,
 		goto Found
 	}
 
+	// Try looking for a midterm assignment
+	if assignment = tryMidtermExam(cmd, getOpts); assignment != nil {
+		goto Found
+	}
+
+	// Try looking for a final assignment
+	if assignment = tryFinalExam(cmd, getOpts); assignment != nil {
+		goto Found
+	}
+
 Found:
 	// Add found item to cache and return it
 	if assignment != nil {
@@ -203,6 +218,47 @@ Found:
 	}
 
 	return assignment, getOpts.Module
+}
+
+// Fuzzy finds either Final Exam or Final Comprehensive Exam
+func tryFinalExam(cmd *cobra.Command, opts *canvas.ModuleItemOpts) *canvasauto.Assignment {
+	matches := finalRegexp.FindStringSubmatch(opts.Name)
+	if len(matches) != 2 {
+		return nil
+	}
+
+	newOpts := *opts
+	newOpts.Name = matches[1]
+
+	// This is necessary as the loaded courses in canvas doesn't
+	// necessarily contain the correct chapters and, frankly it doesn't matter.
+	// There is only one final.
+	newOpts.Contains = true
+
+	log.Debug().Str("name", newOpts.Name).Msg("Attempting final exam match")
+	if found := util.Client(cmd).FindItem(&newOpts); found != nil {
+		opts.Module = getModuleFromItem(cmd, found)
+		return getAssignmentFromItem(cmd, found, &newOpts)
+	}
+	return nil
+}
+
+// Attempts to locate an assignment where the name is Midterm Exam
+// but the exported item ends with (Modules x-x)
+func tryMidtermExam(cmd *cobra.Command, opts *canvas.ModuleItemOpts) *canvasauto.Assignment {
+	if !strings.Contains(opts.Name, "Midterm Exam") {
+		return nil
+	}
+	newOpts := *opts
+
+	newOpts.Name = "Midterm Exam"
+	log.Debug().Str("name", newOpts.Name).Msg("Checking for Midterm Exam")
+	if found := util.Client(cmd).FindItem(&newOpts); found != nil {
+		opts.Module = getModuleFromItem(cmd, found)
+		return getAssignmentFromItem(cmd, found, &newOpts)
+	}
+
+	return nil
 }
 
 // Attempts to return an item with the original grade item

@@ -2,7 +2,6 @@ package grades
 
 import (
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
-	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/netacad"
 	"github.com/spf13/cobra"
 )
 
@@ -19,25 +18,10 @@ you must add --live to commit the grades, else it will simply
 display proposed changes to the gradebook.`,
 }
 
-var assignmentCache *util.AssignmentCache
-
 func execGradesPushCmd(cmd *cobra.Command, args []string) {
 	log := util.Logger(cmd)
 
-	loadOpts := &netacad.LoadGradesFromFileOpts{
-		File:           args[0],
-		WithGradesOnly: true,
-	}
-	if emails, _ := cmd.Flags().GetStringArray("email"); len(emails) > 0 {
-		loadOpts.Emails = emails
-	}
-
-	gradebook, err := netacad.LoadGradesFromFile(loadOpts)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to load netacad grade export csv")
-	}
-
-	assignmentCache = util.NewAssignmentCache()
+	gradebook := mustLoadGrades(cmd, args[0])
 
 	for student, grades := range *gradebook {
 		if grades.Count() == 0 {
