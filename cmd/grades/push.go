@@ -2,9 +2,11 @@ package grades
 
 import (
 	"slices"
+	"sync"
 
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/netacad"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
 
@@ -35,6 +37,8 @@ func execGradesPushCmd(cmd *cobra.Command, args []string) {
 			Msg("Student email filter loaded")
 	}
 
+	// Grade students concurrently
+	gradeWg := &sync.WaitGroup{}
 	for student, grades := range *gradebook {
 		if grades.Count() == 0 {
 			log.Info().Str("email", student.Email).
@@ -46,16 +50,26 @@ func execGradesPushCmd(cmd *cobra.Command, args []string) {
 			continue
 		}
 
-		log.Info().Str("email", student.Email).
-			Int("gradesLoaded", grades.Count()).
-			Str("name", student.First+" "+student.Last).
-			Msg("Grading Student")
-		log.Debug().Str("email", student.Email).
-			Any("gradesLoaded", *grades).
-			Msg("Student Grades Loaded")
-
-		gradeStudent(cmd, &student, grades)
+		gradeWg.Add(1)
+		go func(g *netacad.Grades, s netacad.Student) {
+			defer gradeWg.Done()
+			grade(cmd, g, s)
+		}(grades, student)
 	}
+
+	log.Debug().Msg("All grading goroutines launched, waiting for completion")
+	gradeWg.Wait()
+}
+
+func grade(cmd *cobra.Command, grades *netacad.Grades, student netacad.Student) {
+	log.Info().Str("email", student.Email).
+		Int("gradesLoaded", grades.Count()).
+		Str("name", student.First+" "+student.Last).
+		Msg("Launched Grading Goroutine")
+	log.Debug().Str("email", student.Email).
+		Any("gradesLoaded", *grades).
+		Msg("Student Grades Loaded")
+	gradeStudent(cmd, &student, grades)
 }
 
 func studentInFilter(filter []string, student *netacad.Student) bool {

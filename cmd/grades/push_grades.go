@@ -116,9 +116,9 @@ func getSubmissionsForGrade(cmd *cobra.Command, student *netacad.Student, grade 
 			log.Warn().
 				Str("student", student.Email).
 				Str("assignment", *grade.Assignment.Name).
-				Msg("Grade already submitted, overwrite enabled!")
+				Msg("Grade already submitted but overwrite enabled, grading forced!")
 		} else {
-			log.Warn().
+			log.Info().
 				Str("student", student.Email).
 				Str("assignment", *grade.Assignment.Name).
 				Msg("Grade already submitted, skipping...")
