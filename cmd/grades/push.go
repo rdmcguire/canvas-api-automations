@@ -1,7 +1,10 @@
 package grades
 
 import (
+	"slices"
+
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
+	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/netacad"
 	"github.com/spf13/cobra"
 )
 
@@ -22,9 +25,24 @@ func execGradesPushCmd(cmd *cobra.Command, args []string) {
 	log := util.Logger(cmd)
 
 	gradebook := mustLoadGrades(cmd, args[0])
+	emails, err := cmd.Flags().GetStringArray("email")
+	if err != nil {
+		log.Error().Err(err).Send()
+	}
+
+	if len(emails) > 0 {
+		log.Info().Strs("emails", emails).
+			Msg("Student email filter loaded")
+	}
 
 	for student, grades := range *gradebook {
 		if grades.Count() == 0 {
+			log.Info().Str("email", student.Email).
+				Msg("Student has nothing to grade")
+			continue
+		} else if !studentInFilter(emails, &student) {
+			log.Debug().Str("email", student.Email).
+				Msg("Skipping student by filter")
 			continue
 		}
 
@@ -38,6 +56,16 @@ func execGradesPushCmd(cmd *cobra.Command, args []string) {
 
 		gradeStudent(cmd, &student, grades)
 	}
+}
+
+func studentInFilter(filter []string, student *netacad.Student) bool {
+	if len(filter) > 0 && slices.Contains(filter, student.Email) {
+		return true
+	} else if len(filter) == 0 {
+		return true
+	}
+
+	return false
 }
 
 func init() {

@@ -54,7 +54,7 @@ func (c *Client) ListModules(courseID string) []*canvasauto.Module {
 			log.Error().
 				Str("error", err.Error()).
 				Msg("Failed listing modules")
-			continue
+			break
 		}
 		json.NewDecoder(r.Body).Decode(&pageModules)
 		modules = append(modules, pageModules...)

@@ -114,10 +114,12 @@ func getSubmissionsForGrade(cmd *cobra.Command, student *netacad.Student, grade 
 	if canvas.StrOrNil(submission.WorkflowState) != "unsubmitted" {
 		if overwrite {
 			log.Warn().
+				Str("student", student.Email).
 				Str("assignment", *grade.Assignment.Name).
 				Msg("Grade already submitted, overwrite enabled!")
 		} else {
 			log.Warn().
+				Str("student", student.Email).
 				Str("assignment", *grade.Assignment.Name).
 				Msg("Grade already submitted, skipping...")
 			grade.Assignment = nil
