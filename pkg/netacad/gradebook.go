@@ -7,6 +7,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
 	"golang.org/x/exp/slices"
@@ -102,7 +103,7 @@ func LoadGradesFromFile(opts *LoadGradesFromFileOpts) (*Gradebook, error) {
 
 		// Filter unwanted emails
 		if len(opts.Emails) > 0 {
-			if !slices.Contains(opts.Emails, rowData["Email address"]) {
+			if !hasEmail(opts.Emails, rowData["Email address"]) {
 				goto Next
 			}
 		}
@@ -117,6 +118,16 @@ func LoadGradesFromFile(opts *LoadGradesFromFileOpts) (*Gradebook, error) {
 	}
 
 	return gradebook, nil
+}
+
+func hasEmail(filter []string, email string) bool {
+	for _, eml := range filter {
+		if strings.ToLower(eml) == strings.ToLower(email) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func rowToMap(headers []string, row []string) map[string]string {

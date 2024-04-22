@@ -1,7 +1,7 @@
 package grades
 
 import (
-	"slices"
+	"strings"
 	"sync"
 
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
@@ -73,8 +73,12 @@ func grade(cmd *cobra.Command, grades *netacad.Grades, student netacad.Student) 
 }
 
 func studentInFilter(filter []string, student *netacad.Student) bool {
-	if len(filter) > 0 && slices.Contains(filter, student.Email) {
-		return true
+	if len(filter) > 0 {
+		for _, email := range filter {
+			if strings.ToLower(email) == strings.ToLower(student.Email) {
+				return true
+			}
+		}
 	} else if len(filter) == 0 {
 		return true
 	}
