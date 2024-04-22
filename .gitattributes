@@ -1,0 +1,2 @@
+canvas-api-automations filter=lfs diff=lfs merge=lfs -text
+canvas-api-automations.tgz filter=lfs diff=lfs merge=lfs -text
