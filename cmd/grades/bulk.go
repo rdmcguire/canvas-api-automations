@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/modules"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvas"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
@@ -27,27 +28,71 @@ var gradeStr string
 
 func execGradesBulkCmd(cmd *cobra.Command, args []string) {
 	log := util.Logger(cmd)
+	client := util.Client(cmd)
 	log.Info().Msg("Locating modules for bulk grading")
+
+	grade, _ := cmd.Flags().GetFloat64("grade")
+	gradeStr = strconv.FormatFloat(grade, 'f', 4, 64)
 
 	// Make sure we are happy with the grade we are about to give
 	if live, _ := cmd.Flags().GetBool("live"); live {
-		confirmGrade(cmd)
+		if force, _ := cmd.Flags().GetBool("force"); !force {
+			confirmGrade(cmd)
+		}
 	}
 
 	// First select a module
-	module := util.MustFuzzyFindModule(cmd)
+	var module *canvasauto.Module
+	if moduleID, _ := cmd.Flags().GetString("moduleID"); moduleID != "" {
+		if m, err := client.GetModuleByID(util.GetCourseIdStr(cmd), moduleID); err != nil {
+			log.Fatal().Err(err)
+		} else if m == nil {
+			log.Fatal().Msg("Module not found")
+		} else {
+			module = m
+		}
+	} else {
+		module = util.MustFuzzyFindModule(cmd)
+	}
 	log.Info().
 		Str("module", canvas.StrOrNil(module.Name)).
-		Msg("Module selected, now selecting an assignment")
+		Msg("Module selected")
 
 	// Second select an assignment
-	assignment := util.MustFuzzyFindAssignment(cmd, module)
-	log.Info().
+	assignments := make([]*canvasauto.Assignment, 0)
+	if allAssignments, _ := cmd.Flags().GetBool("allAssignments"); allAssignments {
+		assignments = client.GetAssignmentsFromModule(util.GetCourseIdStr(cmd), module)
+		if len(assignments) < 1 {
+			log.Fatal().Str("id", canvas.StrOrNil(module.Id)).
+				Str("name", canvas.StrOrNil(module.Name)).
+				Msg("No assignments available for module")
+		}
+	} else {
+		assignment := util.MustFuzzyFindAssignment(cmd, module)
+		log.Info().
+			Str("module", canvas.StrOrNil(module.Name)).
+			Str("assignment", canvas.StrOrNil(assignment.Name)).
+			Msg("Assignment selected")
+		if assignment != nil {
+			assignments = append(assignments, assignment)
+		}
+	}
+
+	// Finally grade assignment(s)
+	gradeAssignments(cmd, module, assignments)
+}
+
+func gradeAssignments(cmd *cobra.Command, module *canvasauto.Module, assignments []*canvasauto.Assignment) {
+	for _, assignment := range assignments {
+		gradeAssignment(cmd, module, assignment)
+	}
+}
+
+func gradeAssignment(cmd *cobra.Command, module *canvasauto.Module, assignment *canvasauto.Assignment) {
+	util.Logger(cmd).Info().
 		Str("module", canvas.StrOrNil(module.Name)).
 		Str("assignment", canvas.StrOrNil(assignment.Name)).
-		Msg("Assignment selected, locating submissions")
-
-	// Third get applicable submissions
+		Msg("Grading assignment submissions")
 	submissions := getSubmissions(cmd, module, assignment)
 	for _, s := range submissions {
 		gradeSubmission(cmd, assignment, s)
@@ -93,9 +138,20 @@ func gradeSubmission(cmd *cobra.Command, a *canvasauto.Assignment, s *canvasauto
 
 	log.Info().
 		Str("state", canvas.StrOrNil(s.WorkflowState)).
+		Str("curGrade", canvas.StrOrNil(s.Grade)).
 		Str("due", canvas.StrOrNil(a.DueAt)).
 		Str("student", canvas.StrOrNil(user.Email)).
 		Msg("Found submission for bulk grading")
+
+	if s.Grade != nil && cmpGradeStrings(*s.Grade, gradeStr) {
+		log.Warn().
+			Str("state", canvas.StrOrNil(s.WorkflowState)).
+			Str("curGrade", canvas.StrOrNil(s.Grade)).
+			Str("due", canvas.StrOrNil(a.DueAt)).
+			Str("student", canvas.StrOrNil(user.Email)).
+			Msg("Skipping item, has desired grade")
+		return
+	}
 
 	if live, _ := cmd.Flags().GetBool("live"); !live {
 		log.Debug().Msg("Not grading, set --live to grade")
@@ -112,10 +168,15 @@ func gradeSubmission(cmd *cobra.Command, a *canvasauto.Assignment, s *canvasauto
 	})
 }
 
-func confirmGrade(cmd *cobra.Command) {
-	grade, _ := cmd.Flags().GetFloat64("grade")
-	gradeStr = strconv.FormatFloat(grade, 'f', 4, 64)
+// Returns true if both strings converted to a float64
+// evaluate to be identical
+func cmpGradeStrings(s1 string, s2 string) bool {
+	g1, _ := strconv.ParseFloat(s1, 64)
+	g2, _ := strconv.ParseFloat(s2, 64)
+	return g1 == g2
+}
 
+func confirmGrade(cmd *cobra.Command) {
 	log.Warn().Str("grade", gradeStr).Msg("Applying this grade to all submissions!!! Hit ctrl+c in 10s to abort...")
 
 	ticker := time.NewTicker(10 * time.Second)
@@ -144,8 +205,13 @@ func getSubmissions(cmd *cobra.Command, m *canvasauto.Module, a *canvasauto.Assi
 }
 
 func init() {
+	gradesBulkCmd.Flags().StringP("moduleID", "m", "", "Specify a module ID")
 	gradesBulkCmd.Flags().Bool("submitted", false, "CAUTION!! Will bulk mark submitted grades!")
 	gradesBulkCmd.Flags().Bool("notLate", false, "CAUTION!! Will bulk mark grades that are not already late!")
 	gradesBulkCmd.Flags().Bool("live", false, "CAUTION!! Will enable live grading!")
 	gradesBulkCmd.Flags().Float64P("grade", "g", 0.0, "Grade to mark for assignment")
+	gradesBulkCmd.Flags().BoolP("force", "f", false, "Don't warn first, just grade")
+	gradesBulkCmd.Flags().BoolP("allAssignments", "a", false, "Grade all assignments in selected module")
+
+	gradesBulkCmd.RegisterFlagCompletionFunc("moduleID", modules.ValidateModuleIdArg)
 }

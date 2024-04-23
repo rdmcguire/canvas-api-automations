@@ -70,22 +70,26 @@ func (c *Client) ListModules(courseID string) []*canvasauto.Module {
 }
 
 func (c *Client) GetModuleByID(courseID string, moduleID string) (*canvasauto.Module, error) {
-	module := &canvasauto.Module{}
 	moduleIdInt, _ := strconv.Atoi(moduleID)
 
 	// First hit the cache
-	if module = c.moduleCache.Get(moduleIdInt); module != nil {
+	if module := c.moduleCache.Get(moduleIdInt); module != nil {
 		return module, nil
 	}
 
+	// Then fetch it
 	r, err := c.api.ShowModule(c.ctx, courseID, moduleID, &canvasauto.ShowModuleParams{
 		Include: ptr.To([]string{"items"}),
 	})
 	if err != nil {
-		return module, err
+		return nil, err
 	}
 
-	json.NewDecoder(r.Body).Decode(module)
+	module := &canvasauto.Module{}
+	err = json.NewDecoder(r.Body).Decode(module)
+	if err != nil {
+		return nil, err
+	}
 
 	// Add to cache if found
 	if module.Name != nil {
