@@ -4,12 +4,13 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/rs/zerolog"
+	"github.com/spf13/cobra"
+
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvas"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/netacad"
-	"github.com/rs/zerolog"
-	"github.com/spf13/cobra"
 )
 
 var assignmentsUpdateCmd = &cobra.Command{
@@ -46,7 +47,7 @@ func execAssignmentsUpdateCmd(cmd *cobra.Command, args []string) {
 
 	courseID = util.GetCourseIdStr(cmd)
 
-	netacadAssignments = netacad.LoadAssignmentsHtmlFromFile(args[0])
+	netacadAssignments = netacad.LoadAssignmentsHTMLFromFile(args[0])
 
 	findLinkMatches()
 }
@@ -73,7 +74,7 @@ func findLinkMatches() {
 		opts := &canvas.ModuleItemOpts{
 			CourseID: courseID,
 			Name:     assignment.Name,
-			URL:      assignment.Url,
+			URL:      assignment.URL,
 		}
 
 	Assignment:

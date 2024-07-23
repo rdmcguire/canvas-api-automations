@@ -3,13 +3,14 @@ package grades
 import (
 	"sync"
 
+	"github.com/spf13/cobra"
+	"golang.org/x/exp/slices"
+
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/assignments"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/modules"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvas"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
-	"github.com/spf13/cobra"
-	"golang.org/x/exp/slices"
 )
 
 var gradesShowCmd = &cobra.Command{
@@ -142,5 +143,5 @@ func init() {
 	gradesShowCmd.Flags().BoolP("ungradedOnly", "G", false, "Restrict to ungraded grades only")
 
 	gradesShowCmd.RegisterFlagCompletionFunc("moduleID", modules.ValidateModuleIdArg)
-	gradesShowCmd.RegisterFlagCompletionFunc("assignmentID", assignments.ValidAssignmentIdArg)
+	gradesShowCmd.RegisterFlagCompletionFunc("assignmentID", assignments.ValidAssignmentIDArg)
 }

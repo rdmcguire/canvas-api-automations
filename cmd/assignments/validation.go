@@ -3,10 +3,11 @@ package assignments
 import (
 	"strings"
 
+	"github.com/spf13/cobra"
+
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/courses"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvas"
-	"github.com/spf13/cobra"
 )
 
 func ValidateAssignmentUpdateArgs(cmd *cobra.Command, args []string, toComplete string,
@@ -19,7 +20,7 @@ func ValidateAssignmentUpdateArgs(cmd *cobra.Command, args []string, toComplete 
 	return []string{}, cobra.ShellCompDirectiveNoFileComp
 }
 
-func ValidAssignmentIdArg(cmd *cobra.Command, args []string, toComplete string,
+func ValidAssignmentIDArg(cmd *cobra.Command, args []string, toComplete string,
 ) ([]string, cobra.ShellCompDirective) {
 	completions := make([]string, 0)
 	assignments, err := util.Client(cmd).ListAssignments(util.GetCourseIdStr(cmd))

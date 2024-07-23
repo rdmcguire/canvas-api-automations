@@ -4,14 +4,15 @@ import (
 	"bufio"
 	"os"
 	"regexp"
+	"strings"
 )
 
 type Assignment struct {
 	Name string
-	Url  string
+	URL  string
 }
 
-func LoadAssignmentsHtmlFromFile(file string) []Assignment {
+func LoadAssignmentsHTMLFromFile(file string) []Assignment {
 	assignmentRegexp := regexp.MustCompile(
 		`href="([^"]+)".*instancename"[^>]*>([^>]+)<`,
 	)
@@ -31,8 +32,8 @@ func LoadAssignmentsHtmlFromFile(file string) []Assignment {
 			continue
 		}
 		assignments = append(assignments, Assignment{
-			Url:  string(matches[1]),
-			Name: string(matches[2]),
+			URL:  string(matches[1]),
+			Name: strings.Trim(string(matches[2]), " "),
 		})
 	}
 

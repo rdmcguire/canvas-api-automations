@@ -3,11 +3,12 @@ package assignments
 import (
 	"strconv"
 
+	"github.com/spf13/cobra"
+
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/modules"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvas"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
-	"github.com/spf13/cobra"
 )
 
 var assignmentsShowCmd = &cobra.Command{
@@ -76,5 +77,5 @@ func init() {
 	assignmentsShowCmd.PersistentFlags().Int("assignmentID", 0, "Specify assignment by ID")
 
 	assignmentsShowCmd.RegisterFlagCompletionFunc("moduleID", modules.ValidateModuleIdArg)
-	assignmentsShowCmd.RegisterFlagCompletionFunc("assignmentID", ValidAssignmentIdArg)
+	assignmentsShowCmd.RegisterFlagCompletionFunc("assignmentID", ValidAssignmentIDArg)
 }

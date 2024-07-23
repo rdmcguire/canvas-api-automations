@@ -9,28 +9,29 @@ import (
 	"strconv"
 	"strings"
 
-	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
 	"golang.org/x/exp/slices"
+
+	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
 )
 
-type Gradebook map[Student]*Grades
-type Grades map[string]*Grade
-type Grade struct {
-	Grade      float64
-	Percentage float64
-	// These fields should be updated once
-	// matching information is found in the canvas API
-	Assignment  *canvasauto.Assignment   // Assignment (to be found)
-	Submissions []*canvasauto.Submission // Submissions (to be loaded)
-	Module      *canvasauto.Module       // Module (to be found)
-	User        *canvasauto.User         // User (to be found)
-}
+type (
+	Gradebook map[Student]*Grades
+	Grades    map[string]*Grade
+	Grade     struct {
+		Assignment  *canvasauto.Assignment
+		Module      *canvasauto.Module
+		User        *canvasauto.User
+		Submissions []*canvasauto.Submission
+		Grade       float64
+		Percentage  float64
+	}
+)
 
 type Student struct {
-	ID    int64
 	First string
 	Last  string
 	Email string
+	ID    int64
 }
 
 var (
@@ -62,7 +63,7 @@ func Assignments(opts *LoadGradesFromFileOpts) ([]string, error) {
 	if err != nil {
 		return assignments, err
 	} else if len(headers) < 1 {
-		return assignments, errors.New("No headers found in grade export")
+		return assignments, errors.New("no headers found in grade export")
 	}
 
 	for _, h := range headers {
@@ -122,7 +123,7 @@ func LoadGradesFromFile(opts *LoadGradesFromFileOpts) (*Gradebook, error) {
 
 func hasEmail(filter []string, email string) bool {
 	for _, eml := range filter {
-		if strings.ToLower(eml) == strings.ToLower(email) {
+		if strings.EqualFold(eml, email) {
 			return true
 		}
 	}
@@ -206,13 +207,11 @@ func GradeItemFromHeader(header string) (string, string) {
 }
 
 func NewGrades() *Grades {
-	var grades Grades
-	grades = make(map[string]*Grade, 0)
+	var grades Grades = make(map[string]*Grade, 0)
 	return &grades
 }
 
 func NewGradebook() *Gradebook {
-	var gradebook Gradebook
-	gradebook = make(map[Student]*Grades, 0)
+	var gradebook Gradebook = make(map[Student]*Grades, 0)
 	return &gradebook
 }
