@@ -13,7 +13,7 @@ type Assignment struct {
 
 func LoadAssignmentsHtmlFromFile(file string) []Assignment {
 	assignmentRegexp := regexp.MustCompile(
-		`class="activity.*href="([^"]+)".*instancename"[^>]*>([^>]+)<`,
+		`href="([^"]+)".*instancename"[^>]*>([^>]+)<`,
 	)
 
 	f, err := os.Open(file)

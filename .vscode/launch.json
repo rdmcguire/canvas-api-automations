@@ -1,0 +1,17 @@
+{
+    "$schema": "https://raw.githubusercontent.com/mfussenegger/dapconfig-schema/master/dapconfig-schema.json",
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Update Assignments",
+            "type": "delve",
+            "request": "launch",
+            "program": "${workspaceFolder}",
+            "args": [
+                "assignments",
+                "update",
+                "${workspaceFolder}/contrib/assignments.html"
+            ]
+        }
+    ]
+}
