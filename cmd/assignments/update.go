@@ -1,7 +1,9 @@
 package assignments
 
 import (
+	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/rs/zerolog"
@@ -24,12 +26,16 @@ var assignmentsUpdateCmd = &cobra.Command{
 // the string "Final Exam" should be used. This is due to
 // the option for "Final Comprehensive Exam" and inconsistencies with
 // the assignments that were created in this template in Canvas
-const skipFinalNotComprehensive = true
+const (
+	skipFinalNotComprehensive = true
+	defaultURLPrefix          = "https://www.netacad.com"
+)
 
 var (
-	linkRegexp *regexp.Regexp = regexp.MustCompile(`<a[^>]+href="([^"]+)".*>([^<]+)`)
-	examRegexp *regexp.Regexp = regexp.MustCompile(`Chapter (\d+) Exam`)
-	znumRegexp *regexp.Regexp = regexp.MustCompile(` 0(\d+)`)
+	linkRegexp = regexp.MustCompile(`<a[^>]+href="([^"]+)".*>([^<]+)`)
+	examRegexp = regexp.MustCompile(`Chapter (\d+) Exam`)
+	znumRegexp = regexp.MustCompile(` 0(\d+)`)
+	labRegexp  = regexp.MustCompile(`Lab (\d+)`)
 
 	log                *zerolog.Logger
 	client             *canvas.Client
@@ -44,16 +50,22 @@ func execAssignmentsUpdateCmd(cmd *cobra.Command, args []string) {
 	log = util.Logger(cmd)
 	client = util.Client(cmd)
 	dryRun, _ = cmd.LocalFlags().GetBool("dryRun")
+	prefix, _ := cmd.LocalFlags().GetString("prefix")
+
+	if prefix == "" {
+		prefix = defaultURLPrefix
+	}
 
 	courseID = util.GetCourseIdStr(cmd)
 
-	netacadAssignments = netacad.LoadAssignmentsHTMLFromFile(args[0])
+	netacadAssignments = netacad.LoadAssignmentsHTMLFromFile(args[0], prefix)
 
 	findLinkMatches()
 }
 
 func init() {
 	assignmentsUpdateCmd.Flags().Bool("dryRun", false, "Specify to only report changes")
+	assignmentsUpdateCmd.Flags().String("prefix", "", "Optional prefix to prepend to links")
 }
 
 // Iterates through all modules, and then in each
@@ -114,9 +126,9 @@ func findAssignmentInModule(opts *canvas.ModuleItemOpts) *canvasauto.ModuleItem 
 	}
 	opts.Name = origName
 
-	// Try to fix Exam -> Quiz
+	// Try to fix Exam
 	if strings.Contains(opts.Name, "Exam") {
-		opts.Name = rewriteExamToQuiz(opts.Name)
+		stripPaddedExam(opts)
 		if item := client.GetItemByName(opts); item != nil {
 			log.Debug().
 				Str("originalName", origName).
@@ -125,6 +137,46 @@ func findAssignmentInModule(opts *canvas.ModuleItemOpts) *canvasauto.ModuleItem 
 			return item
 		}
 	}
+	opts.Name = origName
+
+	// Try to match bad lab names
+	// The "improved" version has some called Chapter X Lab
+	// and others Chapter Lab X. Lab X -> X Lab. This code
+	// gets worse by the day
+	if strings.Contains(opts.Name, "Lab") {
+		matches := labRegexp.FindStringSubmatch(opts.Name)
+		var labID int
+		if len(matches) != 2 {
+			goto NEXT
+		} else {
+			var err error
+			labID, err = strconv.Atoi(matches[1])
+			if err != nil {
+				log.Err(err).Send()
+				goto NEXT
+			}
+		}
+
+		opts.Name = fmt.Sprintf("Chapter %d Lab", labID)
+		if item := client.GetItemByName(opts); item != nil {
+			log.Debug().
+				Str("originalName", origName).
+				Str("foundItem", canvas.StrOrNil(item.Title)).
+				Msg("Rewrite Lab to Chapter %d Lab")
+			return item
+		}
+
+		opts.Name = fmt.Sprintf("Chapter Lab %d", labID)
+		if item := client.GetItemByName(opts); item != nil {
+			log.Debug().
+				Str("originalName", origName).
+				Str("foundItem", canvas.StrOrNil(item.Title)).
+				Msg("Rewrite Lab to Chapter Lab %d")
+			return item
+		}
+	}
+
+NEXT:
 	opts.Name = origName
 
 	// Try to fix midterm/final chapter vs module stupidity
@@ -151,12 +203,17 @@ func findAssignmentInModule(opts *canvas.ModuleItemOpts) *canvasauto.ModuleItem 
 	return nil
 }
 
-func rewriteExamToQuiz(name string) string {
-	match := examRegexp.FindStringSubmatch(name)
-	if len(match) == 2 {
-		return "Quiz " + strings.TrimPrefix(match[1], "0")
+func stripPaddedExam(opts *canvas.ModuleItemOpts) {
+	if matches := examRegexp.FindStringSubmatch(opts.Name); len(matches) == 2 {
+		exam, err := strconv.Atoi(matches[1])
+		if err != nil {
+			log.Err(err).Send()
+			return
+		}
+		opts.Name = fmt.Sprintf("Chapter %d Exam", exam)
+		log.Debug().Str("name", opts.Name).Str("originalNumber", matches[1]).
+			Msg("stripping zero-padded exam")
 	}
-	return name
 }
 
 // Detects the type of item, then calls the appropriate
@@ -164,10 +221,8 @@ func rewriteExamToQuiz(name string) string {
 func updateModuleItemLink(opts *canvas.ModuleItemOpts) {
 	if opts.Item.ExternalUrl != nil {
 		UpdateExternalItemLink(opts)
-
 	} else if canvas.StrOrNil(opts.Item.Type) == "Assignment" {
 		UpdateAssignmentItemLink(opts)
-
 	} else {
 		log.Error().Any("tem", *opts.Item).Msg("Unsupported item type")
 	}
@@ -222,7 +277,7 @@ func UpdateAssignmentItemLink(opts *canvas.ModuleItemOpts) {
 		aOpts.Assignment = assignment
 		if a, e := client.UpdateAssignment(aOpts); e != nil {
 			log.Error().
-				Str("error", err.Error()).
+				Str("error", e.Error()).
 				Msg("Failed to update assignment")
 		} else {
 			log.Info().

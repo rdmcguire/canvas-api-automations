@@ -10,7 +10,7 @@
             "args": [
                 "assignments",
                 "update",
-                "${workspaceFolder}/contrib/assignments.html"
+                "${workspaceFolder}/contrib/assignments_parsed.html"
             ]
         }
     ]
