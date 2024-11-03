@@ -4,10 +4,11 @@ import (
 	"strings"
 	"sync"
 
-	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
-	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/netacad"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+
+	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
+	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/netacad"
 )
 
 var gradesPushCmd = &cobra.Command{
@@ -75,7 +76,7 @@ func grade(cmd *cobra.Command, grades *netacad.Grades, student netacad.Student) 
 func studentInFilter(filter []string, student *netacad.Student) bool {
 	if len(filter) > 0 {
 		for _, email := range filter {
-			if strings.ToLower(email) == strings.ToLower(student.Email) {
+			if strings.EqualFold(email, student.Email) {
 				return true
 			}
 		}

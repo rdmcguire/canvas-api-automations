@@ -6,12 +6,13 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/rs/zerolog/log"
+	"github.com/spf13/cobra"
+
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/cmd/util"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvas"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/netacad"
-	"github.com/rs/zerolog/log"
-	"github.com/spf13/cobra"
 )
 
 // Patterns for grade items
@@ -23,6 +24,9 @@ var (
 )
 
 func gradeStudent(cmd *cobra.Command, student *netacad.Student, grades *netacad.Grades) {
+	if student.Email == "" {
+		return
+	}
 	getAssignmentsFromGrades(cmd, student, grades) // First find matching assignments
 	getSubmissionsFromGrades(cmd, student, grades)
 	updateGrades(cmd, student, grades) // Then update grades
@@ -85,6 +89,7 @@ func getSubmissionsForGrade(cmd *cobra.Command, student *netacad.Student, grade 
 	user := client.GetUserByEmail(util.GetCourseIdStr(cmd), student.Email)
 	if user == nil {
 		log.Error().Str("student", student.Email).Msg("Failed to locate user")
+		return
 	}
 
 	grade.User = user
@@ -173,6 +178,11 @@ func getAssignmentFromGrade(cmd *cobra.Command, item string,
 			Str("name", *assignment.Name).
 			Msg("Found assignment in assignment cache")
 		return assignment, getOpts.Module
+	}
+
+	// Try stripping zero-padded item
+	if assignment = tryExamWithoutPadding(cmd, getOpts); assignment != nil {
+		goto Found
 	}
 
 	// Try with a full match (probably a waste of time)
@@ -274,6 +284,24 @@ func tryFullNameMatch(cmd *cobra.Command, opts *canvas.ModuleItemOpts) *canvasau
 	return nil
 }
 
+// If this is a zero-padded exam number, strip the zero and try again
+func tryExamWithoutPadding(cmd *cobra.Command, opts *canvas.ModuleItemOpts) *canvasauto.Assignment {
+	matches := chapterExamRegexp.FindStringSubmatch(opts.Name)
+	if len(matches) < 2 {
+		return nil
+	}
+
+	newOpts := *opts
+	newOpts.Name = fmt.Sprintf("Chapter %s Exam", strings.TrimPrefix(matches[1], "0"))
+	log.Debug().Str("name", newOpts.Name).Msg("Attempting chapter exam without leading zeroes")
+	if found := util.Client(cmd).FindItem(&newOpts); found != nil {
+		opts.Module = getModuleFromItem(cmd, found)
+		return getAssignmentFromItem(cmd, found, &newOpts)
+	}
+
+	return nil
+}
+
 // Attempts to locate an assignment where the name is Lab X but
 // the graded item is zero-padded. Also strips the annoying
 // External Tool: prefix
@@ -348,7 +376,7 @@ func getModuleFromItem(cmd *cobra.Command, item *canvasauto.ModuleItem) *canvasa
 	return module
 }
 
-func getAssignmentFromItem(cmd *cobra.Command, item *canvasauto.ModuleItem, opts *canvas.ModuleItemOpts) *canvasauto.Assignment {
+func getAssignmentFromItem(cmd *cobra.Command, item *canvasauto.ModuleItem, _ *canvas.ModuleItemOpts) *canvasauto.Assignment {
 	client := util.Client(cmd)
 	var assignment *canvasauto.Assignment
 

@@ -31,9 +31,9 @@ func execAssignmentsShowCmd(cmd *cobra.Command, args []string) {
 
 	if moduleID != 0 {
 		log.Debug().Int("moduleID", moduleID).Msg("Listing assignments by module")
-		module, err := client.GetModuleByID(courseID, strconv.Itoa(moduleID))
-		if err != nil || module == nil {
-			log.Fatal().Err(err).
+		module, moduleErr := client.GetModuleByID(courseID, strconv.Itoa(moduleID))
+		if moduleErr != nil || module == nil {
+			log.Fatal().Err(moduleErr).
 				Int("courseID", util.GetCourseIdInt(cmd)).
 				Int("moduleID", moduleID).Msg("Failed to find module")
 		} else if module.Items == nil {
@@ -41,12 +41,12 @@ func execAssignmentsShowCmd(cmd *cobra.Command, args []string) {
 		}
 		for _, i := range *module.Items {
 			if canvas.StrOrNil(i.Type) == "Assignment" {
-				a, err := client.GetAssignmentById(&canvas.AssignmentOpts{
+				a, assignmentErr := client.GetAssignmentById(&canvas.AssignmentOpts{
 					ID:             canvas.StrOrNil(i.ContentId),
 					ModuleItemOpts: &canvas.ModuleItemOpts{CourseID: courseID},
 				})
-				if err != nil {
-					log.Error().Err(err).Msg("Failed retrieving assignment from module item")
+				if assignmentErr != nil {
+					log.Error().Err(assignmentErr).Msg("Failed retrieving assignment from module item")
 					continue
 				}
 				assignments = append(assignments, a)
