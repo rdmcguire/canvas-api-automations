@@ -3,15 +3,32 @@ package netacad
 import (
 	"encoding/csv"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 
+	"github.com/rs/zerolog/log"
 	"golang.org/x/exp/slices"
 
 	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
+)
+
+const (
+	colName  = "NAME"
+	colEmail = "EMAIL"
+)
+
+var (
+	gradeRegexp          = regexp.MustCompile(`(.*) \((Real|Percentage)\)`)
+	pcntGradeRegexp      = regexp.MustCompile(`([0-9.]+) ?%`)
+	isGradeRegexp        = regexp.MustCompile(`^[0-9]+(\.[0-9]+)? ?%?`)
+	isTotalRegexp        = regexp.MustCompile(`total$`)
+	pointsPossibleRegexp = regexp.MustCompile(`^Points? Possible$`)
+
+	pointsPossible map[string]float64
 )
 
 type (
@@ -33,13 +50,6 @@ type Student struct {
 	Email string
 	ID    int64
 }
-
-var (
-	gradeRegexp     = regexp.MustCompile(`(.*) \((Real|Percentage)\)`)
-	pcntGradeRegexp = regexp.MustCompile(`([0-9.]+) ?%`)
-	isGradeRegexp   = regexp.MustCompile(`^[0-9]+(\.[0-9]+)? ?%?`)
-	isTotalRegexp   = regexp.MustCompile(`total$`)
-)
 
 type LoadGradesFromFileOpts struct {
 	File           string   // Path to Netacad csv export
@@ -98,13 +108,18 @@ func LoadGradesFromFile(opts *LoadGradesFromFileOpts) (*Gradebook, error) {
 		if len(headers) == 0 {
 			headers = row
 			continue
+		} else if pointsPossible == nil {
+			pointsPossible, err = loadPointsPossible(row, headers)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		rowData := rowToMap(headers, row)
 
 		// Filter unwanted emails
 		if len(opts.Emails) > 0 {
-			if !hasEmail(opts.Emails, rowData["Email address"]) {
+			if !hasEmail(opts.Emails, rowData[colEmail]) {
 				goto Next
 			}
 		}
@@ -119,6 +134,30 @@ func LoadGradesFromFile(opts *LoadGradesFromFileOpts) (*Gradebook, error) {
 	}
 
 	return gradebook, nil
+}
+
+func loadPointsPossible(row []string, headers []string) (map[string]float64, error) {
+	pointsPossible = make(map[string]float64, len(headers)-2)
+	var err error
+	if !pointsPossibleRegexp.Match([]byte(row[0])) {
+		return pointsPossible,
+			fmt.Errorf("unexpected field %s for points possible stupidity", row[0])
+	}
+
+	for field, points := range row {
+		if field < 2 {
+			continue
+		} else if points == "" {
+			continue
+		}
+
+		possible, parseErr := strconv.ParseFloat(points, 64)
+		if parseErr != nil {
+			return nil, parseErr
+		}
+		pointsPossible[headers[field]] = possible
+	}
+	return pointsPossible, err
 }
 
 func hasEmail(filter []string, email string) bool {
@@ -140,31 +179,57 @@ func rowToMap(headers []string, row []string) map[string]string {
 }
 
 func (g *Gradebook) loadRow(row map[string]string) {
-	id, err := strconv.ParseInt(row["ID number"], 10, 64)
-	if err != nil {
+	if row[colName] == "" {
 		return
 	}
 
+	var first, last string
+	name := strings.Split(row[colName], " ")
+	if len(name) > 0 {
+		first = strings.Join(name[:len(name)-1], " ")
+		last = name[len(name)-1]
+	}
 	student := Student{
-		ID:    id,
-		First: row["First name"],
-		Last:  row["Surname"],
-		Email: row["Email address"],
+		First: first,
+		Last:  last,
+		Email: row[colEmail],
 	}
 
+	var grades *Grades
+
 	if (*g)[student] == nil {
-		(*g)[student] = NewGrades()
+		grades = NewGrades()
+		(*g)[student] = grades
 	}
 
 	for key, grade := range row {
-		item, itemType := GradeItemFromHeader(key)
-		if item == "" || itemType == "" {
+		if !isGradeRegexp.MatchString(grade) {
 			continue
 		}
-		(*g)[student].Record(item, itemType, grade)
+		possible, ok := pointsPossible[key]
+		if !ok {
+			log.Warn().Str("key", key).Str("grade", grade).Msg("encountered unknown assignment")
+			continue
+		}
+		gradeFloat, err := strconv.ParseFloat(grade, 64)
+		if err != nil {
+			log.Err(err).Str("key", key).Str("grade", grade).Msg("unable to parse grade")
+			continue
+		}
+		pcnt := gradeFloat / possible
+		grades.RecordGrade(key, gradeFloat, pcnt)
 	}
 }
 
+func (g *Grades) RecordGrade(item string, grade float64, pcnt float64) {
+	if (*g)[item] == nil {
+		(*g)[item] = &Grade{}
+	}
+	(*g)[item].Grade = grade
+	(*g)[item].Percentage = pcnt
+}
+
+// NOTE: This is legacy code, see the comment in GradeItemFromHeader
 func (g *Grades) Record(item string, itemType string, grade string) {
 	if !isGradeRegexp.MatchString(grade) {
 		return
@@ -199,6 +264,11 @@ func (g *Grades) Count() int {
 
 // Returns gradeable column from header string.
 // Returns name of the item and type (Real|Percentage) separately
+// NOTE: this used to be required in `old netacad` but new one is
+// even more dumb than the old one. Keeping in-case the Netacad clowns
+// decide to keep making stupid changes that add no value just to annoy
+// the piss out of anyone trying to automate with their obnoxious
+// data and lack of API
 func GradeItemFromHeader(header string) (string, string) {
 	if parts := gradeRegexp.FindStringSubmatch(header); len(parts) == 3 {
 		return parts[1], parts[2]

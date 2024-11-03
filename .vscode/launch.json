@@ -3,6 +3,17 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Show Grades",
+            "type": "delve",
+            "request": "launch",
+            "program": "${workspaceFolder}",
+            "args": [
+                "grades",
+                "dump",
+                "${workspaceFolder}/contrib/grades.csv"
+            ]
+        },
+        {
             "name": "Update Assignments",
             "type": "delve",
             "request": "launch",
