@@ -34,8 +34,11 @@ func gradeStudent(cmd *cobra.Command, student *netacad.Student, grades *netacad.
 
 func updateGrades(cmd *cobra.Command, student *netacad.Student, grades *netacad.Grades) {
 	for _, grade := range *grades {
-		if grade.Assignment != nil {
+		if grade.Assignment != nil && grade.User != nil {
 			updateGrade(cmd, student, grade)
+		} else {
+			log.Warn().Str("student", fmt.Sprintf("%s, %s [%s]", student.Last, student.First, student.Email)).
+				Msg("Unknown assignment or user not found, unable to continue")
 		}
 	}
 }

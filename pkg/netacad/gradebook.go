@@ -39,8 +39,8 @@ type (
 		Module      *canvasauto.Module
 		User        *canvasauto.User
 		Submissions []*canvasauto.Submission
-		Grade       float64
-		Percentage  float64
+		Grade       float64 // Actual value
+		Percentage  float64 // 0.0-100.0 percentage
 	}
 )
 
@@ -216,7 +216,7 @@ func (g *Gradebook) loadRow(row map[string]string) {
 			log.Err(err).Str("key", key).Str("grade", grade).Msg("unable to parse grade")
 			continue
 		}
-		pcnt := gradeFloat / possible
+		pcnt := (gradeFloat / possible) * 100.0
 		grades.RecordGrade(key, gradeFloat, pcnt)
 	}
 }
