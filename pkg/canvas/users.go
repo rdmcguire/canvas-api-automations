@@ -6,8 +6,9 @@ import (
 	"strings"
 	"sync"
 
-	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
 	"github.com/rs/zerolog/log"
+
+	"gitea.libretechconsulting.com/50W/canvas-api-automations/pkg/canvasauto"
 )
 
 type UserCache struct {
@@ -59,7 +60,8 @@ func (c *Client) ListUsersInCourse(courseID string, search string) []*canvasauto
 
 		r, err := c.api.ListUsersInCourseUsers(c.ctx, courseID, params)
 		if err != nil || r.Body == nil {
-			log.Error().Err(err)
+			log.Error().Err(err).Send()
+			return nil
 		}
 
 		json.NewDecoder(r.Body).Decode(&pageUsers)

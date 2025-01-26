@@ -14,6 +14,16 @@
             ]
         },
         {
+            "name": "List Students",
+            "type": "delve",
+            "request": "launch",
+            "program": "${workspaceFolder}",
+            "args": [
+                "students",
+                "list"
+            ]
+        },
+        {
             "name": "Update Assignments",
             "type": "delve",
             "request": "launch",
